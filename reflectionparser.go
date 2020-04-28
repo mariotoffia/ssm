@@ -46,35 +46,35 @@ func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect
 
 		switch fv.Kind() {
 		case reflect.Struct:
-			err := p.parseSubStruct(nodes, t, fv, ft, parent, prefix)
+			node, err := p.parseSubStruct(nodes, t, fv, ft, parent, prefix)
 			if err != nil {
 				return nil, err
 			}
-			continue
+			nodes = append(nodes, *node)
 		case reflect.Ptr:
 			// Get the value it points to
 			tv := reflect.Indirect(fv)
 			if tv.IsValid() {
-				err := p.parseSubStruct(nodes, t, tv, ft, parent, prefix)
+				node, err := p.parseSubStruct(nodes, t, tv, ft, parent, prefix)
 				if err != nil {
 					return nil, err
 				}
-				continue
+				nodes = append(nodes, *node)
 			}
-		}
-
-		// Parse the tag on field
-		tag, err := p.parseField(ft, prefix)
-		if err != nil {
-			return nil, errors.Errorf("The config %s could not parse field %s", t.Name(), ft.Name)
-		}
-		// Store tag for field
-		if tag != nil {
-			if e := log.Debug(); e.Enabled() {
-				e.Str("svc", p.service).Msgf("struct: '%s' field: '%s' parsed: '%+v' full Name: '%s'", t.Name(), ft.Name, tag, tag.FullName())
+		default:
+			// Parse the tag on field
+			tag, err := p.parseField(ft, prefix)
+			if err != nil {
+				return nil, errors.Errorf("The config %s could not parse field %s", t.Name(), ft.Name)
 			}
+			// Store tag for field
+			if tag != nil {
+				if e := log.Debug(); e.Enabled() {
+					e.Str("svc", p.service).Msgf("struct: '%s' field: '%s' parsed: '%+v' full Name: '%s'", t.Name(), ft.Name, tag, tag.FullName())
+				}
 
-			nodes = append(nodes, ssmNode{t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
+				nodes = append(nodes, ssmNode{t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
+			}
 		}
 	}
 
@@ -84,20 +84,19 @@ func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect
 // The ft struct field is of a struct kind and hence we need to parse all it's
 // fields and add those as children
 func (p *reflectionParser) parseSubStruct(nodes []ssmNode, t reflect.Type, fv reflect.Value,
-	ft reflect.StructField, parent *ssmNode, prefix string) error {
+	ft reflect.StructField, parent *ssmNode, prefix string) (*ssmNode, error) {
 
 	node := ssmNode{t: t, f: ft, v: fv, root: false, parent: parent}
 	cn, err := p.parseStruct(&node, prefix+"/"+strings.ToLower(ft.Name), fv)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(cn) > 0 {
 		node.childs = cn
-		nodes = append(nodes, node)
 	}
-	return nil
+	return &node, nil
 }
 
 // Parses a single field in a structure and returns a ssmTag interface. If no tags

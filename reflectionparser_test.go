@@ -12,17 +12,17 @@ type SingleStringStruct struct {
 }
 
 type StructWithSubStruct struct {
-	Name string `pms:"name"`
+	Name string `pms:"test, prefix=simple"`
 	Sub  struct {
-		Apa int    `pms:"apa"`
-		Nu  string `pms:"nisse"`
+		Apa int    `pms:"ext"`
+		Nu  string `pms:"myname"`
 	}
 }
 
 func TestSingleStringStruct(t *testing.T) {
 	var test SingleStringStruct
 	tp := reflect.ValueOf(&test)
-	node, err := newReflectionParser("dev", "test-service").parse("", tp)
+	node, err := newReflectionParser("eap", "test-service").parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -34,7 +34,7 @@ func TestSingleStringStruct(t *testing.T) {
 func TestStructWithSubStruct(t *testing.T) {
 	var test StructWithSubStruct
 	tp := reflect.ValueOf(&test)
-	node, err := newReflectionParser("dev", "test-service").parse("", tp)
+	node, err := newReflectionParser("eap", "test-service").parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

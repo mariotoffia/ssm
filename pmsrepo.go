@@ -39,7 +39,7 @@ func newPms(service string) (*pmsRepo, error) {
 }
 
 func (p *pmsRepo) get(node *ssmNode) error {
-	m := make(map[string]*ssmNode)
+	m := map[string]*ssmNode{}
 	issecure := p.nodesToParameterMap(node, m)
 	paths := p.extractParameters(m)
 
@@ -64,7 +64,7 @@ func (p *pmsRepo) get(node *ssmNode) error {
 	return err
 }
 
-func (p *pmsRepo) populate(node *ssmNode, params map[string]*ssm.Parameter) {
+func (p *pmsRepo) populate(node *ssmNode, params map[string]ssm.Parameter) {
 	node.EnsureInstance(false)
 
 	if node.HasChildren() {
@@ -74,14 +74,18 @@ func (p *pmsRepo) populate(node *ssmNode, params map[string]*ssm.Parameter) {
 		return
 	}
 
-	val := params[node.tag.FullName()]
-	switch node.v.Kind() {
-	case reflect.String:
-		node.v.SetString(*val.Value)
+	if val, ok := params[node.tag.FullName()]; ok {
+		log.Debug().Msgf("name: %s (%s) val: %s", node.tag.FullName(), *val.Name, *val.Value)
+		switch node.v.Kind() {
+		case reflect.String:
+			node.v.SetString(*val.Value)
+		}
+	} else {
+		log.Debug().Msgf("no value for property name: %s", node.tag.FullName())
 	}
 }
 
-func (p *pmsRepo) getFromAws(params *ssm.GetParametersInput) (map[string]*ssm.Parameter, []string, error) {
+func (p *pmsRepo) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.Parameter, []string, error) {
 	client := ssm.New(p.config)
 	req := client.GetParametersRequest(params)
 
@@ -91,9 +95,10 @@ func (p *pmsRepo) getFromAws(params *ssm.GetParametersInput) (map[string]*ssm.Pa
 		return nil, nil, errors.Errorf("Failed fetch pms config entries %+v", params)
 	}
 
-	m := make(map[string]*ssm.Parameter)
+	m := map[string]ssm.Parameter{}
 	for _, p := range resp.Parameters {
-		m[*p.Name] = &p
+		key := *p.Name
+		m[key] = p
 	}
 
 	return m, resp.InvalidParameters, nil

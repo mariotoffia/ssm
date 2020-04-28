@@ -11,7 +11,7 @@ import (
 func TestWihSingleStringStruct(t *testing.T) {
 	var test SingleStringStruct
 	tp := reflect.ValueOf(&test)
-	node, err := newReflectionParser("dev", "test-service").parse("", tp)
+	node, err := newReflectionParser("eap", "test-service").parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -29,6 +29,33 @@ func TestWihSingleStringStruct(t *testing.T) {
 	assert.Equal(t, "The name", test.Name)
 
 	res := node.v.Interface().(SingleStringStruct)
+	assert.Equal(t, "The name", res.Name)
+}
+
+func TestWihSingleNestedStruct(t *testing.T) {
+	var test StructWithSubStruct
+	tp := reflect.ValueOf(&test)
+	node, err := newReflectionParser("eap", "test-service").parse("", tp)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	nnn := []ssmNode{}
+	dumpNodes(append(nnn, node))
+
+	pmsr, err := newPms("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	err = pmsr.get(&node)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "The name", test.Name)
+
+	res := node.v.Interface().(StructWithSubStruct)
 	assert.Equal(t, "The name", res.Name)
 }
 

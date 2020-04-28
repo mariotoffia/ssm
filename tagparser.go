@@ -12,7 +12,7 @@ func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag,
 		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
-	tag := asmTag{prefix: renderPrefix(prefix, env, svc), tags: make(map[string]string)}
+	tag := asmTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
 	commas := strings.Split(s, ",")
 	for _, kvs := range commas {
 		kv := strings.Split(kvs, "=")
@@ -54,7 +54,7 @@ func parsePmsTagString(s string, prefix string, env string, svc string) (ssmTag,
 		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
-	tag := pmsTag{prefix: renderPrefix(prefix, env, svc), tags: make(map[string]string)}
+	tag := pmsTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
 	commas := strings.Split(s, ",")
 	for _, kvs := range commas {
 		kv := strings.Split(kvs, "=")
