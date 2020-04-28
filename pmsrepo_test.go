@@ -83,6 +83,7 @@ func TestLek(t *testing.T) {
 	// https://golang.org/src/encoding/json/encode.go
 	// https://golang.org/src/encoding/json/decode.go
 	// https://gist.github.com/hvoecking/10772475#file-translate-go-L191
+	// https://medium.com/capital-one-tech/learning-to-use-go-reflection-part-2-c91657395066
 	var s B
 	dumpStruct(reflect.ValueOf(s))
 }

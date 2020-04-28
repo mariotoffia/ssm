@@ -21,10 +21,19 @@ type fullNameField struct {
 type pmsRepo struct {
 	config  aws.Config
 	service string
+	tier    ssm.ParameterTier
+}
+
+// Allows for change the tier. By default pmsRepo uses
+// the standard tier.
+func (p *pmsRepo) setTier(tier ssm.ParameterTier) *pmsRepo {
+	p.tier = tier
+	return p
 }
 
 func newPmsFromConfig(config aws.Config, service string) *pmsRepo {
-	return &pmsRepo{config: config, service: service}
+	return &pmsRepo{config: config, service: service,
+		tier: ssm.ParameterTierStandard}
 }
 
 func newPmsWithRegion(region string, service string) (*pmsRepo, error) {
@@ -37,7 +46,8 @@ func newPmsWithRegion(region string, service string) (*pmsRepo, error) {
 		awscfg.Region = region
 	}
 
-	return &pmsRepo{config: awscfg, service: service}, nil
+	return &pmsRepo{config: awscfg, service: service,
+		tier: ssm.ParameterTierStandard}, nil
 }
 
 func newPms(service string) (*pmsRepo, error) {
@@ -63,7 +73,6 @@ func (p *pmsRepo) get(node *ssmNode) (map[string]fullNameField, error) {
 
 	im := map[string]fullNameField{}
 	if len(invalid) > 0 {
-		log.Debug().Str("service", p.service).Msgf("Invalid Parameter(s): %v", invalid)
 		for _, name := range invalid {
 			if val, ok := m[name]; ok {
 				im[name] = fullNameField{FullName: val.tag.FullName(), Field: val.f, Value: val.v}
