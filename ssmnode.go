@@ -25,7 +25,7 @@ type ssmNode struct {
 func (ssm *ssmNode) IsRoot() bool               { return ssm.root }
 func (ssm *ssmNode) HasChildren() bool          { return nil != ssm.childs }
 func (ssm *ssmNode) IsReflectValueNilPtr() bool { return !ssm.v.IsValid() }
-func (ssm *ssmNode) ToString(nochild bool) string {
+func (ssm *ssmNode) ToString(children bool) string {
 	parent := ""
 	if ssm.parent != nil {
 		parent = ssm.f.Name
@@ -34,11 +34,32 @@ func (ssm *ssmNode) ToString(nochild bool) string {
 	s := fmt.Sprintf("owning type: '%s' ('%s') field '%s' tag '%+v' parent-property '%s'",
 		ssm.t.Kind().String(), ssm.t.Name(), ssm.f.Name, ssm.tag, parent)
 
-	if !nochild && ssm.childs != nil && len(ssm.childs) > 0 {
+	if children && ssm.childs != nil && len(ssm.childs) > 0 {
 		for _, chld := range ssm.childs {
-			s = fmt.Sprintf("%s --> %s", s, chld.ToString(true))
+			s = fmt.Sprintf("%s --> %s", s, chld.ToString(children))
 		}
 	}
 
 	return s
+}
+
+// If the embedded reflect.Value is a pointer type
+// and it is nil. It will create a new instance and
+// assing the it to the pointer. All this is done
+// through reflection.
+func (ssm *ssmNode) EnsureInstance(children bool) {
+	// Only ptr and those who is nil can be created
+	if ssm.v.Kind() != reflect.Ptr || ssm.v.IsValid() {
+		return
+	}
+
+	ssm.v.Set(reflect.New(ssm.v.Elem().Type()))
+
+	if !children {
+		return
+	}
+
+	for _, child := range ssm.childs {
+		child.EnsureInstance(children)
+	}
 }

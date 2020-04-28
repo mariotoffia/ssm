@@ -21,7 +21,7 @@ type StructWithSubStruct struct {
 
 func TestSingleStringStruct(t *testing.T) {
 	var test SingleStringStruct
-	tp := reflect.ValueOf(test)
+	tp := reflect.ValueOf(&test)
 	node, err := newReflectionParser("dev", "test-service").parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -33,7 +33,7 @@ func TestSingleStringStruct(t *testing.T) {
 
 func TestStructWithSubStruct(t *testing.T) {
 	var test StructWithSubStruct
-	tp := reflect.ValueOf(test)
+	tp := reflect.ValueOf(&test)
 	node, err := newReflectionParser("dev", "test-service").parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)

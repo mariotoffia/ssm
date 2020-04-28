@@ -8,6 +8,34 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestWihSingleStringStruct(t *testing.T) {
+	var test SingleStringStruct
+	tp := reflect.ValueOf(&test)
+	node, err := newReflectionParser("dev", "test-service").parse("", tp)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	pmsr, err := newPms("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	err = pmsr.get(&node)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "The name", test.Name)
+
+	res := node.v.Interface().(SingleStringStruct)
+	assert.Equal(t, "The name", res.Name)
+}
+
+//
+// LEK O LÄR...
+//
+
 type A struct {
 	Greeting string
 	Message  string
@@ -56,46 +84,4 @@ func dumpStruct(v reflect.Value) {
 		log.Debug().Msgf("name: %s field %s, type: %s kind: %s",
 			t.Name(), ft.Name, fv.Type().Name(), fv.Kind().String())
 	}
-}
-
-func TestSingleStringStructCreate(t *testing.T) {
-	var test SingleStringStruct
-	tp := reflect.ValueOf(test)
-	node, err := newReflectionParser("dev", "test-service").parse("", tp)
-	if err != nil {
-		assert.Equal(t, nil, err)
-	}
-
-	v, err := create(&node)
-	if err != nil {
-		assert.Equal(t, nil, err)
-	}
-
-	nodes := []ssmNode{}
-	dumpNodes(append(nodes, node))
-	s := v.Interface().(SingleStringStruct)
-	s.Name = "pelle"
-	log.Debug().Msgf("TestSingleStringStructCreate: s.Name = %s", s.Name)
-}
-
-func TestStructWithSubStructCreate(t *testing.T) {
-	var test StructWithSubStruct
-	tp := reflect.ValueOf(test)
-	node, err := newReflectionParser("dev", "test-service").parse("", tp)
-	if err != nil {
-		assert.Equal(t, nil, err)
-	}
-
-	v, err := create(&node)
-	if err != nil {
-		assert.Equal(t, nil, err)
-	}
-
-	nodes := []ssmNode{}
-	dumpNodes(append(nodes, node))
-	s := v.Interface().(StructWithSubStruct)
-	s.Name = "pelle"
-	s.Sub.Apa = 17
-	s.Sub.Nu = "test"
-	log.Debug().Msgf("TestStructWithSubStructCreate name %s sub.apa %d sub.nu %s", s.Name, s.Sub.Apa, s.Sub.Nu)
 }

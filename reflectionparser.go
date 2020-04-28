@@ -18,8 +18,15 @@ func newReflectionParser(deployEnv string, service string) *reflectionParser {
 }
 
 func (p *reflectionParser) parse(prefix string, v reflect.Value) (ssmNode, error) {
-	node := ssmNode{t: v.Type(), v: v, root: true, parent: nil}
-	nodes, err := p.parseStruct(&node, prefix, v)
+	node := ssmNode{t: v.Type(), root: true, parent: nil}
+
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return node, errors.Errorf("Must pass struct by pointer and it must no be null - kind: %s", v.Kind().String())
+	}
+
+	// Dereference the pointer
+	node.v = reflect.Indirect(v)
+	nodes, err := p.parseStruct(&node, prefix, node.v)
 
 	if err != nil {
 		return ssmNode{root: true, parent: nil}, err
@@ -32,6 +39,7 @@ func (p *reflectionParser) parse(prefix string, v reflect.Value) (ssmNode, error
 func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect.Value) ([]ssmNode, error) {
 	t := v.Type()
 	nodes := []ssmNode{}
+
 	for i := 0; i < v.NumField(); i++ {
 		fv := v.Field(i)
 		ft := t.Field(i)
@@ -45,7 +53,7 @@ func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect
 			continue
 		case reflect.Ptr:
 			// Get the value it points to
-			tv := fv.Elem()
+			tv := reflect.Indirect(fv)
 			if tv.IsValid() {
 				err := p.parseSubStruct(nodes, t, tv, ft, parent, prefix)
 				if err != nil {
@@ -129,7 +137,7 @@ func dumpNodes(nodes []ssmNode) {
 			childNodes = append(childNodes, node)
 		}
 
-		log.Debug().Msg(node.ToString(true))
+		log.Debug().Msg(node.ToString(false))
 	}
 
 	for _, node := range childNodes {
