@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/mariotoffia/ssm.git/internal/parser"
+	"github.com/mariotoffia/ssm.git/internal/tagparser"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -97,7 +97,7 @@ func (p *pmsRepo) populate(node *ssmNode, params map[string]ssm.Parameter) error
 		return nil
 	}
 
-	if node.tag.SsmType() != parser.Pms {
+	if node.tag.SsmType() != tagparser.Pms {
 		log.Debug().Msgf("Node %s is not of pms type", node.tag.FullName())
 		return nil
 	}
@@ -166,7 +166,7 @@ func (p *pmsRepo) nodesToParameterMap(node *ssmNode, paths map[string]*ssmNode) 
 			}
 		}
 	} else {
-		if node.tag.SsmType() == parser.Pms {
+		if node.tag.SsmType() == tagparser.Pms {
 			paths[node.tag.FullName()] = node
 			if node.tag.Secure() {
 				issecure = true

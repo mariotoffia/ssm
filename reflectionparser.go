@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/mariotoffia/ssm.git/internal/parser"
+	"github.com/mariotoffia/ssm.git/internal/tagparser"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -103,14 +103,14 @@ func (p *reflectionParser) parseSubStruct(nodes []ssmNode, t reflect.Type, fv re
 // Parses a single field in a structure and returns a ssmTag interface. If no tags
 // is retrieved nil is returned. For example when a field is a sub struct hence this
 // is a valid return. Errors may return.
-func (p *reflectionParser) parseField(f reflect.StructField, prefix string) (parser.SsmTag, error) {
+func (p *reflectionParser) parseField(f reflect.StructField, prefix string) (tagparser.SsmTag, error) {
 	// Nothing to parse (this is not an error)
 	if f.Tag == "" {
 		return nil, nil
 	}
 	// Parameter store
 	if value, ok := f.Tag.Lookup("pms"); ok {
-		pmstag, err := parser.ParsePmsTagString(value, prefix, p.deployEnv, p.service)
+		pmstag, err := tagparser.ParsePmsTagString(value, prefix, p.deployEnv, p.service)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +119,7 @@ func (p *reflectionParser) parseField(f reflect.StructField, prefix string) (par
 	}
 	// Secrets manager
 	if value, ok := f.Tag.Lookup("asm"); ok {
-		asmtag, err := parser.ParseAsmTagString(value, prefix, p.deployEnv, p.service)
+		asmtag, err := tagparser.ParseAsmTagString(value, prefix, p.deployEnv, p.service)
 		if err != nil {
 			return nil, err
 		}
