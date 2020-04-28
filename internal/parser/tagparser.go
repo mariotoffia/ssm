@@ -1,4 +1,4 @@
-package ssm
+package parser
 
 import (
 	"fmt"
@@ -7,12 +7,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag, error) {
+// ParseAsmTagString parses the inparam tag string s into a SsmTag interface
+func ParseAsmTagString(s string, prefix string, env string, svc string) (SsmTag, error) {
 	if len(s) == 0 {
 		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
-	tag := asmTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
+	tag := AsmTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
 	commas := strings.Split(s, ",")
 	for _, kvs := range commas {
 		kv := strings.Split(kvs, "=")
@@ -49,12 +50,13 @@ func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag,
 	return &tag, nil
 }
 
-func parsePmsTagString(s string, prefix string, env string, svc string) (ssmTag, error) {
+// ParsePmsTagString parses the inparam tag string s into a SsmTag interface
+func ParsePmsTagString(s string, prefix string, env string, svc string) (SsmTag, error) {
 	if len(s) == 0 {
 		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
-	tag := pmsTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
+	tag := PmsTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
 	commas := strings.Split(s, ",")
 	for _, kvs := range commas {
 		kv := strings.Split(kvs, "=")

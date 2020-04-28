@@ -4,23 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mariotoffia/ssm.git/internal/testsupport"
 	"github.com/stretchr/testify/assert"
 )
 
-type SingleStringStruct struct {
-	Name string `pms:"test, prefix=simple,tag1=nanna banna panna"`
-}
-
-type StructWithSubStruct struct {
-	Name string `pms:"test, prefix=simple"`
-	Sub  struct {
-		Apa int    `pms:"ext"`
-		Nu  string `pms:"myname"`
-	}
-}
-
 func TestSingleStringStruct(t *testing.T) {
-	var test SingleStringStruct
+	var test testsupport.SingleStringStruct
 	tp := reflect.ValueOf(&test)
 	node, err := newReflectionParser("eap", "test-service").parse("", tp)
 	if err != nil {
@@ -32,7 +21,7 @@ func TestSingleStringStruct(t *testing.T) {
 }
 
 func TestStructWithSubStruct(t *testing.T) {
-	var test StructWithSubStruct
+	var test testsupport.StructWithSubStruct
 	tp := reflect.ValueOf(&test)
 	node, err := newReflectionParser("eap", "test-service").parse("", tp)
 	if err != nil {

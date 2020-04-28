@@ -3,6 +3,8 @@ package ssm
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/mariotoffia/ssm.git/internal/parser"
 )
 
 type ssmNode struct {
@@ -13,7 +15,7 @@ type ssmNode struct {
 	// The field value (not set if root node)
 	f reflect.StructField
 	// The parsed tag (if sub-struct attr will be nil)
-	tag ssmTag
+	tag parser.SsmTag
 	// Any child nodes (if sub-struct)
 	childs []ssmNode
 	// The parent node (nil if root node)

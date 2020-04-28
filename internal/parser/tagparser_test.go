@@ -1,4 +1,4 @@
-package ssm
+package parser
 
 import (
 	"testing"
@@ -7,33 +7,33 @@ import (
 )
 
 func TestEmptyPmsTagShallFail(t *testing.T) {
-	_, err := parsePmsTagString("", "", "dev", "test-service")
+	_, err := ParsePmsTagString("", "", "dev", "test-service")
 
 	assert.NotEqual(t, nil, err)
 }
 
 func TestEmptyAsmTagShallFail(t *testing.T) {
-	_, err := parseAsmTagString("", "", "dev", "test-service")
+	_, err := ParseAsmTagString("", "", "dev", "test-service")
 
 	assert.NotEqual(t, nil, err)
 }
 
 func TestSingleWordInAsmTagShallBeTranslatedToName(t *testing.T) {
-	ssmTag, err := parseAsmTagString("myproperty", "", "dev", "test-service")
+	ssmTag, err := ParseAsmTagString("myproperty", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
 }
 
 func TestSingleWordInPmsTagShallBeTranslatedToName(t *testing.T) {
-	ssmTag, err := parsePmsTagString("myproperty", "", "dev", "test-service")
+	ssmTag, err := ParsePmsTagString("myproperty", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
 }
 
 func TestSingleWordInPmsAndEnvIsDevAndServiceIsTestServiceTagShallRenderProperPrefixAndFullName(t *testing.T) {
-	ssmTag, err := parsePmsTagString("myproperty", "", "dev", "test-service")
+	ssmTag, err := ParsePmsTagString("myproperty", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -42,7 +42,7 @@ func TestSingleWordInPmsAndEnvIsDevAndServiceIsTestServiceTagShallRenderProperPr
 }
 
 func TestSingleWordInAsmAndEnvIsDevAndServiceIsTestServiceTagShallRenderProperPrefixAndFullName(t *testing.T) {
-	ssmTag, err := parseAsmTagString("myproperty", "", "dev", "test-service")
+	ssmTag, err := ParseAsmTagString("myproperty", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -51,7 +51,7 @@ func TestSingleWordInAsmAndEnvIsDevAndServiceIsTestServiceTagShallRenderProperPr
 }
 
 func TestAsmTagInparamPrefixIsAlwaysAfterEnvironmentAndService(t *testing.T) {
-	ssmTag, err := parseAsmTagString("myproperty", "/dummy-prefix", "dev", "test-service")
+	ssmTag, err := ParseAsmTagString("myproperty", "/dummy-prefix", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -59,7 +59,7 @@ func TestAsmTagInparamPrefixIsAlwaysAfterEnvironmentAndService(t *testing.T) {
 }
 
 func TestPmsTagInparamPrefixIsAlwaysAfterEnvironmentAndService(t *testing.T) {
-	ssmTag, err := parsePmsTagString("myproperty", "/dummy-prefix", "dev", "test-service")
+	ssmTag, err := ParsePmsTagString("myproperty", "/dummy-prefix", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -67,7 +67,7 @@ func TestPmsTagInparamPrefixIsAlwaysAfterEnvironmentAndService(t *testing.T) {
 }
 
 func TestPmsTagWithPrefixOverridesInparamPrefixAndServcice(t *testing.T) {
-	ssmTag, err := parsePmsTagString("myproperty, prefix=/baah/bii", "/dummy-prefix", "dev", "test-service")
+	ssmTag, err := ParsePmsTagString("myproperty, prefix=/baah/bii", "/dummy-prefix", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -75,7 +75,7 @@ func TestPmsTagWithPrefixOverridesInparamPrefixAndServcice(t *testing.T) {
 }
 
 func TestAsmTagWithPrefixOverridesInparamPrefixAndServcice(t *testing.T) {
-	ssmTag, err := parseAsmTagString("myproperty, prefix=/baah/bii", "/dummy-prefix", "dev", "test-service")
+	ssmTag, err := ParseAsmTagString("myproperty, prefix=/baah/bii", "/dummy-prefix", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -83,31 +83,31 @@ func TestAsmTagWithPrefixOverridesInparamPrefixAndServcice(t *testing.T) {
 }
 
 func TestPmsDoubleNonKvNamesWillFail(t *testing.T) {
-	_, err := parsePmsTagString("myproperty, hiihaa", "/dummy-prefix", "dev", "test-service")
+	_, err := ParsePmsTagString("myproperty, hiihaa", "/dummy-prefix", "dev", "test-service")
 
 	assert.NotEqual(t, nil, err)
 }
 
 func TestAsmDoubleNonKvNamesWillFail(t *testing.T) {
-	_, err := parseAsmTagString("myproperty, hiihaa", "/dummy-prefix", "dev", "test-service")
+	_, err := ParseAsmTagString("myproperty, hiihaa", "/dummy-prefix", "dev", "test-service")
 
 	assert.NotEqual(t, nil, err)
 }
 
 func TestAsmSingleNameAndKvNameShallFail(t *testing.T) {
-	_, err := parseAsmTagString("myproperty, name=hiihaaa", "/dummy-prefix", "dev", "test-service")
+	_, err := ParseAsmTagString("myproperty, name=hiihaaa", "/dummy-prefix", "dev", "test-service")
 
 	assert.NotEqual(t, nil, err)
 }
 
 func TestPmsSingleNameAndKvNameShallFail(t *testing.T) {
-	_, err := parsePmsTagString("myproperty, name=hiihaaa", "/dummy-prefix", "dev", "test-service")
+	_, err := ParsePmsTagString("myproperty, name=hiihaaa", "/dummy-prefix", "dev", "test-service")
 
 	assert.NotEqual(t, nil, err)
 }
 
 func TestPmsTagWithNameAndKeyIdShallBeSecure(t *testing.T) {
-	ssmTag, err := parsePmsTagString("myproperty, keyid=arn://12902309-121212-1299845", "", "dev", "test-service")
+	ssmTag, err := ParsePmsTagString("myproperty, keyid=arn://12902309-121212-1299845", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -115,7 +115,7 @@ func TestPmsTagWithNameAndKeyIdShallBeSecure(t *testing.T) {
 	assert.Equal(t, true, ssmTag.Secure())
 }
 func TestAsmExtraKvIsTags(t *testing.T) {
-	ssmTag, err := parseAsmTagString("myproperty, super=man,bibbo=blobban", "", "dev", "test-service")
+	ssmTag, err := ParseAsmTagString("myproperty, super=man,bibbo=blobban", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
@@ -125,7 +125,7 @@ func TestAsmExtraKvIsTags(t *testing.T) {
 	assert.Equal(t, "blobban", ssmTag.Tags()["bibbo"])
 }
 func TestPmsExtraKvIsTags(t *testing.T) {
-	ssmTag, err := parsePmsTagString("myproperty, super=man,bibbo=blobban", "", "dev", "test-service")
+	ssmTag, err := ParsePmsTagString("myproperty, super=man,bibbo=blobban", "", "dev", "test-service")
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, "myproperty", ssmTag.Name())
