@@ -21,13 +21,12 @@ func TestWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	err = pmsr.get(&node)
+	_, err = pmsr.get(&node)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
 	assert.Equal(t, "The name", test.Name)
-
 	res := node.v.Interface().(SingleStringStruct)
 	assert.Equal(t, "The name", res.Name)
 }
@@ -48,12 +47,14 @@ func TestWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	err = pmsr.get(&node)
+	_, err = pmsr.get(&node)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
 	assert.Equal(t, "The name", test.Name)
+	assert.Equal(t, 43, test.Sub.Apa)
+	assert.Equal(t, "test svc name", test.Sub.Nu)
 
 	res := node.v.Interface().(StructWithSubStruct)
 	assert.Equal(t, "The name", res.Name)
