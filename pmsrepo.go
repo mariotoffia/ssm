@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/tagparser"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -55,8 +56,8 @@ func newPms(service string) (*pmsRepo, error) {
 	return newPmsWithRegion("", service)
 }
 
-func (p *pmsRepo) get(node *ssmNode) (map[string]fullNameField, error) {
-	m := map[string]*ssmNode{}
+func (p *pmsRepo) get(node *reflectparser.SsmNode) (map[string]fullNameField, error) {
+	m := map[string]*reflectparser.SsmNode{}
 	issecure := p.nodesToParameterMap(node, m)
 	paths := p.extractParameters(m)
 
@@ -76,7 +77,7 @@ func (p *pmsRepo) get(node *ssmNode) (map[string]fullNameField, error) {
 	if len(invalid) > 0 {
 		for _, name := range invalid {
 			if val, ok := m[name]; ok {
-				im[name] = fullNameField{FullName: val.tag.FullName(), Field: val.f, Value: val.v}
+				im[name] = fullNameField{FullName: val.Tag().FullName(), Field: val.Field(), Value: val.Value()}
 			} else {
 				log.Warn().Str("service", p.service).Msgf("Could not find %s in node map", name)
 			}
@@ -87,35 +88,35 @@ func (p *pmsRepo) get(node *ssmNode) (map[string]fullNameField, error) {
 	return im, err
 }
 
-func (p *pmsRepo) populate(node *ssmNode, params map[string]ssm.Parameter) error {
+func (p *pmsRepo) populate(node *reflectparser.SsmNode, params map[string]ssm.Parameter) error {
 	node.EnsureInstance(false)
 
 	if node.HasChildren() {
-		for _, n := range node.childs {
+		for _, n := range node.Children() {
 			p.populate(&n, params)
 		}
 		return nil
 	}
 
-	if node.tag.SsmType() != tagparser.Pms {
-		log.Debug().Msgf("Node %s is not of pms type", node.tag.FullName())
+	if node.Tag().SsmType() != tagparser.Pms {
+		log.Debug().Msgf("Node %s is not of pms type", node.Tag().FullName())
 		return nil
 	}
 
-	if val, ok := params[node.tag.FullName()]; ok {
-		log.Debug().Msgf("setting: %s (%s) val: %s", node.tag.FullName(), *val.Name, *val.Value)
-		switch node.v.Kind() {
+	if val, ok := params[node.Tag().FullName()]; ok {
+		log.Debug().Msgf("setting: %s (%s) val: %s", node.Tag().FullName(), *val.Name, *val.Value)
+		switch node.Value().Kind() {
 		case reflect.String:
-			node.v.SetString(*val.Value)
+			node.Value().SetString(*val.Value)
 		case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int8:
 			ival, err := strconv.ParseInt(*val.Value, 10, 64)
 			if err != nil {
 				return errors.Errorf("Config value %s = %s is not a valid integer", *val.Name, *val.Value)
 			}
-			node.v.SetInt(ival)
+			node.Value().SetInt(ival)
 		}
 	} else {
-		log.Debug().Msgf("no value for property name: %s", node.tag.FullName())
+		log.Debug().Msgf("no value for property name: %s", node.Tag().FullName())
 	}
 
 	return nil
@@ -143,7 +144,7 @@ func (p *pmsRepo) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.Par
 
 // Flattern the parameters in order to provide queries against
 // the parameter store.
-func (p *pmsRepo) extractParameters(paths map[string]*ssmNode) []string {
+func (p *pmsRepo) extractParameters(paths map[string]*reflectparser.SsmNode) []string {
 	arr := make([]string, 0, len(paths))
 	for key := range paths {
 		arr = append(arr, key)
@@ -157,18 +158,18 @@ func (p *pmsRepo) extractParameters(paths map[string]*ssmNode) []string {
 // it chcks for the tag SsmType = pms. The full name is
 // the associated with the node itself. This is to gain
 // a more accessable structure to seach for nodes.
-func (p *pmsRepo) nodesToParameterMap(node *ssmNode, paths map[string]*ssmNode) bool {
+func (p *pmsRepo) nodesToParameterMap(node *reflectparser.SsmNode, paths map[string]*reflectparser.SsmNode) bool {
 	issecure := false
 	if node.HasChildren() {
-		for _, n := range node.childs {
+		for _, n := range node.Children() {
 			if p.nodesToParameterMap(&n, paths) {
 				issecure = true
 			}
 		}
 	} else {
-		if node.tag.SsmType() == tagparser.Pms {
-			paths[node.tag.FullName()] = node
-			if node.tag.Secure() {
+		if node.Tag().SsmType() == tagparser.Pms {
+			paths[node.Tag().FullName()] = node
+			if node.Tag().Secure() {
 				issecure = true
 			}
 		}

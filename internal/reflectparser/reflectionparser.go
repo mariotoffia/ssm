@@ -1,4 +1,4 @@
-package ssm
+package reflectparser
 
 import (
 	"reflect"
@@ -9,17 +9,21 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type reflectionParser struct {
+// ReflectionParser is a parser that uses
+// reflection to reflect structs and tags
+type ReflectionParser struct {
 	deployEnv string
 	service   string
 }
 
-func newReflectionParser(deployEnv string, service string) *reflectionParser {
-	return &reflectionParser{deployEnv: deployEnv, service: service}
+// NewReflectionParser Creates a new reflection parser
+func NewReflectionParser(deployEnv string, service string) *ReflectionParser {
+	return &ReflectionParser{deployEnv: deployEnv, service: service}
 }
 
-func (p *reflectionParser) parse(prefix string, v reflect.Value) (ssmNode, error) {
-	node := ssmNode{t: v.Type(), root: true, parent: nil}
+// Parse parses the value and creates a hiearchy to be used when marshal / unmarshal
+func (p *ReflectionParser) Parse(prefix string, v reflect.Value) (SsmNode, error) {
+	node := SsmNode{t: v.Type(), root: true, parent: nil}
 
 	if v.Kind() != reflect.Ptr || v.IsNil() {
 		return node, errors.Errorf("Must pass struct by pointer and it must no be null - kind: %s", v.Kind().String())
@@ -30,16 +34,16 @@ func (p *reflectionParser) parse(prefix string, v reflect.Value) (ssmNode, error
 	nodes, err := p.parseStruct(&node, prefix, node.v)
 
 	if err != nil {
-		return ssmNode{root: true, parent: nil}, err
+		return SsmNode{root: true, parent: nil}, err
 	}
 
 	node.childs = nodes
 	return node, nil
 }
 
-func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect.Value) ([]ssmNode, error) {
+func (p *ReflectionParser) parseStruct(parent *SsmNode, prefix string, v reflect.Value) ([]SsmNode, error) {
 	t := v.Type()
-	nodes := []ssmNode{}
+	nodes := []SsmNode{}
 
 	for i := 0; i < v.NumField(); i++ {
 		fv := v.Field(i)
@@ -74,7 +78,7 @@ func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect
 					e.Str("svc", p.service).Msgf("struct: '%s' field: '%s' parsed: '%+v' full Name: '%s'", t.Name(), ft.Name, tag, tag.FullName())
 				}
 
-				nodes = append(nodes, ssmNode{t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
+				nodes = append(nodes, SsmNode{t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
 			}
 		}
 	}
@@ -84,10 +88,10 @@ func (p *reflectionParser) parseStruct(parent *ssmNode, prefix string, v reflect
 
 // The ft struct field is of a struct kind and hence we need to parse all it's
 // fields and add those as children
-func (p *reflectionParser) parseSubStruct(nodes []ssmNode, t reflect.Type, fv reflect.Value,
-	ft reflect.StructField, parent *ssmNode, prefix string) (*ssmNode, error) {
+func (p *ReflectionParser) parseSubStruct(nodes []SsmNode, t reflect.Type, fv reflect.Value,
+	ft reflect.StructField, parent *SsmNode, prefix string) (*SsmNode, error) {
 
-	node := ssmNode{t: t, f: ft, v: fv, root: false, parent: parent}
+	node := SsmNode{t: t, f: ft, v: fv, root: false, parent: parent}
 	cn, err := p.parseStruct(&node, prefix+"/"+strings.ToLower(ft.Name), fv)
 
 	if err != nil {
@@ -103,7 +107,7 @@ func (p *reflectionParser) parseSubStruct(nodes []ssmNode, t reflect.Type, fv re
 // Parses a single field in a structure and returns a ssmTag interface. If no tags
 // is retrieved nil is returned. For example when a field is a sub struct hence this
 // is a valid return. Errors may return.
-func (p *reflectionParser) parseField(f reflect.StructField, prefix string) (tagparser.SsmTag, error) {
+func (p *ReflectionParser) parseField(f reflect.StructField, prefix string) (tagparser.SsmTag, error) {
 	// Nothing to parse (this is not an error)
 	if f.Tag == "" {
 		return nil, nil
@@ -129,8 +133,9 @@ func (p *reflectionParser) parseField(f reflect.StructField, prefix string) (tag
 	return nil, nil
 }
 
-func dumpNodes(nodes []ssmNode) {
-	childNodes := []ssmNode{}
+// DumpNodes dumps info in the whole tree
+func DumpNodes(nodes []SsmNode) {
+	childNodes := []SsmNode{}
 
 	for _, node := range nodes {
 		if node.HasChildren() {
@@ -141,6 +146,6 @@ func dumpNodes(nodes []ssmNode) {
 	}
 
 	for _, node := range childNodes {
-		dumpNodes(node.childs)
+		DumpNodes(node.Children())
 	}
 }

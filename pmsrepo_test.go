@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/testsupport"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +13,7 @@ import (
 func TestWihSingleStringStruct(t *testing.T) {
 	var test testsupport.SingleStringStruct
 	tp := reflect.ValueOf(&test)
-	node, err := newReflectionParser("eap", "test-service").parse("", tp)
+	node, err := reflectparser.NewReflectionParser("eap", "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -28,20 +29,20 @@ func TestWihSingleStringStruct(t *testing.T) {
 	}
 
 	assert.Equal(t, "The name", test.Name)
-	res := node.v.Interface().(testsupport.SingleStringStruct)
+	res := node.Value().Interface().(testsupport.SingleStringStruct)
 	assert.Equal(t, "The name", res.Name)
 }
 
 func TestWihSingleNestedStruct(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 	tp := reflect.ValueOf(&test)
-	node, err := newReflectionParser("eap", "test-service").parse("", tp)
+	node, err := reflectparser.NewReflectionParser("eap", "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	nnn := []ssmNode{}
-	dumpNodes(append(nnn, node))
+	nnn := []reflectparser.SsmNode{}
+	reflectparser.DumpNodes(append(nnn, node))
 
 	pmsr, err := newPms("test-service")
 	if err != nil {
@@ -57,7 +58,7 @@ func TestWihSingleNestedStruct(t *testing.T) {
 	assert.Equal(t, 43, test.Sub.Apa)
 	assert.Equal(t, "test svc name", test.Sub.Nu)
 
-	res := node.v.Interface().(testsupport.StructWithSubStruct)
+	res := node.Value().Interface().(testsupport.StructWithSubStruct)
 	assert.Equal(t, "The name", res.Name)
 }
 
