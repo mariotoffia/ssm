@@ -36,12 +36,12 @@ type pmsTag struct {
 	tags map[string]string
 }
 
-func (t pmsTag) SsmType() ssmType        { return pms }
-func (t pmsTag) Prefix() string          { return t.prefix }
-func (t pmsTag) Name() string            { return t.name }
-func (t pmsTag) Tags() map[string]string { return t.tags }
-func (t pmsTag) FullName() string        { return fmt.Sprintf("%s/%s", t.prefix, t.name) }
-func (t pmsTag) Secure() bool            { return t.keyID != "" }
+func (t *pmsTag) SsmType() ssmType        { return pms }
+func (t *pmsTag) Prefix() string          { return t.prefix }
+func (t *pmsTag) Name() string            { return t.name }
+func (t *pmsTag) Tags() map[string]string { return t.tags }
+func (t *pmsTag) FullName() string        { return fmt.Sprintf("%s/%s", t.prefix, t.name) }
+func (t *pmsTag) Secure() bool            { return t.keyID != "" }
 
 type asmTag struct {
 	// Overrides the prefix of the path to the name. Default is /service name/name of parameter.
@@ -53,9 +53,9 @@ type asmTag struct {
 	tags map[string]string
 }
 
-func (t asmTag) SsmType() ssmType        { return asm }
-func (t asmTag) Prefix() string          { return t.prefix }
-func (t asmTag) Name() string            { return t.name }
-func (t asmTag) Tags() map[string]string { return t.tags }
-func (t asmTag) FullName() string        { return fmt.Sprintf("%s/%s", t.prefix, t.name) }
-func (t asmTag) Secure() bool            { return true }
+func (t *asmTag) SsmType() ssmType        { return asm }
+func (t *asmTag) Prefix() string          { return t.prefix }
+func (t *asmTag) Name() string            { return t.name }
+func (t *asmTag) Tags() map[string]string { return t.tags }
+func (t *asmTag) FullName() string        { return fmt.Sprintf("%s/%s", t.prefix, t.name) }
+func (t *asmTag) Secure() bool            { return true }

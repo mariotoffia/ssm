@@ -9,7 +9,7 @@ import (
 
 func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag, error) {
 	if len(s) == 0 {
-		return asmTag{}, errors.Errorf("tag string cannot be empty")
+		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
 	tag := asmTag{prefix: renderPrefix(prefix, env, svc), tags: make(map[string]string)}
@@ -20,7 +20,7 @@ func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag,
 
 		if len(kv) == 1 {
 			if tag.name != "" {
-				return asmTag{}, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
+				return nil, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
 					tag.name, kv[0], s)
 			}
 			tag.name = kv[0]
@@ -30,7 +30,7 @@ func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag,
 			switch kv[0] {
 			case "name":
 				if tag.name != "" {
-					return pmsTag{}, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
+					return nil, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
 						tag.name, kv[0], s)
 				}
 				tag.name = kv[1]
@@ -43,15 +43,15 @@ func parseAsmTagString(s string, prefix string, env string, svc string) (ssmTag,
 	}
 
 	if tag.name == "" {
-		return asmTag{}, errors.Errorf("No name specified in tag %s", s)
+		return nil, errors.Errorf("No name specified in tag %s", s)
 	}
 
-	return tag, nil
+	return &tag, nil
 }
 
 func parsePmsTagString(s string, prefix string, env string, svc string) (ssmTag, error) {
 	if len(s) == 0 {
-		return pmsTag{}, errors.Errorf("tag string cannot be empty")
+		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
 	tag := pmsTag{prefix: renderPrefix(prefix, env, svc), tags: make(map[string]string)}
@@ -62,7 +62,7 @@ func parsePmsTagString(s string, prefix string, env string, svc string) (ssmTag,
 
 		if len(kv) == 1 {
 			if tag.name != "" {
-				return pmsTag{}, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
+				return nil, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
 					tag.name, kv[0], s)
 			}
 			tag.name = kv[0]
@@ -72,7 +72,7 @@ func parsePmsTagString(s string, prefix string, env string, svc string) (ssmTag,
 			switch kv[0] {
 			case "name":
 				if tag.name != "" {
-					return pmsTag{}, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
+					return nil, errors.Errorf("already got a name %s and cannot overwrite it with %s - tag: %s",
 						tag.name, kv[0], s)
 				}
 				tag.name = kv[1]
@@ -87,10 +87,10 @@ func parsePmsTagString(s string, prefix string, env string, svc string) (ssmTag,
 	}
 
 	if tag.name == "" {
-		return pmsTag{}, errors.Errorf("No name specified in tag %s", s)
+		return nil, errors.Errorf("No name specified in tag %s", s)
 	}
 
-	return tag, nil
+	return &tag, nil
 }
 
 func renderPrefix(prefix string, env string, svc string) string {

@@ -12,3 +12,5 @@ dep:
 	@go get
 tidy:
 	go mod tidy
+play:
+	go test -v -run TestLek
