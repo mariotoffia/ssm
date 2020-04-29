@@ -11,7 +11,7 @@ import (
 func TestSingleStringStruct(t *testing.T) {
 	var test testsupport.SingleStringStruct
 	tp := reflect.ValueOf(&test)
-	node, err := NewReflectionParser("eap", "test-service").Parse("", tp)
+	node, err := New("eap", "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -23,7 +23,7 @@ func TestSingleStringStruct(t *testing.T) {
 func TestStructWithSubStruct(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 	tp := reflect.ValueOf(&test)
-	node, err := NewReflectionParser("eap", "test-service").Parse("", tp)
+	node, err := New("eap", "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

@@ -1,4 +1,4 @@
-package ssm
+package pms
 
 import (
 	"reflect"
@@ -13,17 +13,17 @@ import (
 func TestWihSingleStringStruct(t *testing.T) {
 	var test testsupport.SingleStringStruct
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.NewReflectionParser("eap", "test-service").Parse("", tp)
+	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := newPms("test-service")
+	pmsr, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.get(&node)
+	_, err = pmsr.Get(&node)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -36,7 +36,7 @@ func TestWihSingleStringStruct(t *testing.T) {
 func TestWihSingleNestedStruct(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.NewReflectionParser("eap", "test-service").Parse("", tp)
+	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -44,12 +44,12 @@ func TestWihSingleNestedStruct(t *testing.T) {
 	nnn := []reflectparser.SsmNode{}
 	reflectparser.DumpNodes(append(nnn, node))
 
-	pmsr, err := newPms("test-service")
+	pmsr, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.get(&node)
+	_, err = pmsr.Get(&node)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

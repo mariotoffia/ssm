@@ -1,4 +1,4 @@
-package ssm
+package pms
 
 import (
 	"context"
@@ -14,49 +14,58 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type fullNameField struct {
+// FullNameField contains the full pms name and
+// Field metadata including the reflect.Value
+type FullNameField struct {
 	FullName string
 	Field    reflect.StructField
 	Value    reflect.Value
 }
 
-type pmsRepo struct {
+// Serializer handles the parameter store communication
+type Serializer struct {
 	config  aws.Config
 	service string
 	tier    ssm.ParameterTier
 }
 
-// Allows for change the tier. By default pmsRepo uses
+// SetTier allows for change the tier. By default PmsRepo uses
 // the standard tier.
-func (p *pmsRepo) setTier(tier ssm.ParameterTier) *pmsRepo {
+func (p *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
 	p.tier = tier
 	return p
 }
 
-func newPmsFromConfig(config aws.Config, service string) *pmsRepo {
-	return &pmsRepo{config: config, service: service,
+// NewFromConfig creates a repository using a existing configuration
+func NewFromConfig(config aws.Config, service string) *Serializer {
+	return &Serializer{config: config, service: service,
 		tier: ssm.ParameterTierStandard}
 }
 
-func newPmsWithRegion(region string, service string) (*pmsRepo, error) {
+// NewWithRegion creates a repository using the default configuration
+// with optional region override.
+func NewWithRegion(region string, service string) (*Serializer, error) {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		return &pmsRepo{}, errors.Errorf("Failed to load AWS config %v", err)
+		return &Serializer{}, errors.Errorf("Failed to load AWS config %v", err)
 	}
 
 	if len(region) > 0 {
 		awscfg.Region = region
 	}
 
-	return &pmsRepo{config: awscfg, service: service,
+	return &Serializer{config: awscfg, service: service,
 		tier: ssm.ParameterTierStandard}, nil
 }
 
-func newPms(service string) (*pmsRepo, error) {
-	return newPmsWithRegion("", service)
+// New creates a repository using the default configuration.
+func New(service string) (*Serializer, error) {
+	return NewWithRegion("", service)
 }
 
-func (p *pmsRepo) get(node *reflectparser.SsmNode) (map[string]fullNameField, error) {
+// Get parameters from the parameterstore and populates the node graph with values.
+// Any fields that was not able to be set is reported in the FullNameField string map.
+func (p *Serializer) Get(node *reflectparser.SsmNode) (map[string]FullNameField, error) {
 	m := map[string]*reflectparser.SsmNode{}
 	issecure := p.nodesToParameterMap(node, m)
 	paths := p.extractParameters(m)
@@ -73,11 +82,11 @@ func (p *pmsRepo) get(node *reflectparser.SsmNode) (map[string]fullNameField, er
 		return nil, err
 	}
 
-	im := map[string]fullNameField{}
+	im := map[string]FullNameField{}
 	if len(invalid) > 0 {
 		for _, name := range invalid {
 			if val, ok := m[name]; ok {
-				im[name] = fullNameField{FullName: val.Tag().FullName(), Field: val.Field(), Value: val.Value()}
+				im[name] = FullNameField{FullName: val.Tag().FullName(), Field: val.Field(), Value: val.Value()}
 			} else {
 				log.Warn().Str("service", p.service).Msgf("Could not find %s in node map", name)
 			}
@@ -88,7 +97,7 @@ func (p *pmsRepo) get(node *reflectparser.SsmNode) (map[string]fullNameField, er
 	return im, err
 }
 
-func (p *pmsRepo) populate(node *reflectparser.SsmNode, params map[string]ssm.Parameter) error {
+func (p *Serializer) populate(node *reflectparser.SsmNode, params map[string]ssm.Parameter) error {
 	node.EnsureInstance(false)
 
 	if node.HasChildren() {
@@ -104,17 +113,7 @@ func (p *pmsRepo) populate(node *reflectparser.SsmNode, params map[string]ssm.Pa
 	}
 
 	if val, ok := params[node.Tag().FullName()]; ok {
-		log.Debug().Msgf("setting: %s (%s) val: %s", node.Tag().FullName(), *val.Name, *val.Value)
-		switch node.Value().Kind() {
-		case reflect.String:
-			node.Value().SetString(*val.Value)
-		case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int8:
-			ival, err := strconv.ParseInt(*val.Value, 10, 64)
-			if err != nil {
-				return errors.Errorf("Config value %s = %s is not a valid integer", *val.Name, *val.Value)
-			}
-			node.Value().SetInt(ival)
-		}
+		setStructValue(node, val)
 	} else {
 		log.Debug().Msgf("no value for property name: %s", node.Tag().FullName())
 	}
@@ -122,8 +121,33 @@ func (p *pmsRepo) populate(node *reflectparser.SsmNode, params map[string]ssm.Pa
 	return nil
 }
 
+func setStructValue(node *reflectparser.SsmNode, val ssm.Parameter) error {
+
+	log.Debug().Msgf("setting: %s (%s) val: %s", node.Tag().FullName(), *val.Name, *val.Value)
+
+	switch node.Value().Kind() {
+
+	case reflect.String:
+		node.Value().SetString(*val.Value)
+
+	case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int8:
+		setStructIntValue(node, val)
+	}
+
+	return nil
+}
+
+func setStructIntValue(node *reflectparser.SsmNode, val ssm.Parameter) error {
+	ival, err := strconv.ParseInt(*val.Value, 10, 64)
+	if err != nil {
+		return errors.Errorf("Config value %s = %s is not a valid integer", *val.Name, *val.Value)
+	}
+	node.Value().SetInt(ival)
+	return nil
+}
+
 // Invoke get towards aws parameter store
-func (p *pmsRepo) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.Parameter, []string, error) {
+func (p *Serializer) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.Parameter, []string, error) {
 	client := ssm.New(p.config)
 	req := client.GetParametersRequest(params)
 
@@ -144,7 +168,7 @@ func (p *pmsRepo) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.Par
 
 // Flattern the parameters in order to provide queries against
 // the parameter store.
-func (p *pmsRepo) extractParameters(paths map[string]*reflectparser.SsmNode) []string {
+func (p *Serializer) extractParameters(paths map[string]*reflectparser.SsmNode) []string {
 	arr := make([]string, 0, len(paths))
 	for key := range paths {
 		arr = append(arr, key)
@@ -158,7 +182,7 @@ func (p *pmsRepo) extractParameters(paths map[string]*reflectparser.SsmNode) []s
 // it chcks for the tag SsmType = pms. The full name is
 // the associated with the node itself. This is to gain
 // a more accessable structure to seach for nodes.
-func (p *pmsRepo) nodesToParameterMap(node *reflectparser.SsmNode, paths map[string]*reflectparser.SsmNode) bool {
+func (p *Serializer) nodesToParameterMap(node *reflectparser.SsmNode, paths map[string]*reflectparser.SsmNode) bool {
 	issecure := false
 	if node.HasChildren() {
 		for _, n := range node.Children() {

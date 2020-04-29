@@ -16,8 +16,8 @@ type ReflectionParser struct {
 	service   string
 }
 
-// NewReflectionParser Creates a new reflection parser
-func NewReflectionParser(deployEnv string, service string) *ReflectionParser {
+// New Creates a new reflection parser
+func New(deployEnv string, service string) *ReflectionParser {
 	return &ReflectionParser{deployEnv: deployEnv, service: service}
 }
 
