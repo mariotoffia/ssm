@@ -11,6 +11,12 @@ import (
 type SsmNode struct {
 	// If this node is a root node or not.
 	root bool
+	// This is the fully qualified field name. If
+	// within a substruct it will have a dotted path.
+	// For example Address.Street. This means that
+	// Street is this node and it is within a sub-struct
+	// on a field called Address.
+	fqname string
 	// The struct type
 	t reflect.Type
 	// The field value (not set if root node)
@@ -27,6 +33,11 @@ type SsmNode struct {
 
 // IsRoot determines if this node is a root node or a child
 func (ssm *SsmNode) IsRoot() bool { return ssm.root }
+
+// FqName returns the fully qualified name. Sub-struct fields
+// have dotted navigation and the last component is the name
+// of the field
+func (ssm *SsmNode) FqName() string { return ssm.fqname }
 
 // HasChildren checks if the node has child nodes (e.g. a struct field)
 func (ssm *SsmNode) HasChildren() bool { return nil != ssm.childs }
@@ -56,7 +67,7 @@ func (ssm *SsmNode) ToString(children bool) string {
 	}
 
 	s := fmt.Sprintf("owning type: '%s' ('%s') field '%s' tag '%+v' parent-property '%s'",
-		ssm.t.Kind().String(), ssm.t.Name(), ssm.f.Name, ssm.tag, parent)
+		ssm.t.Kind().String(), ssm.t.Name(), ssm.fqname, ssm.tag, parent)
 
 	if children && ssm.childs != nil && len(ssm.childs) > 0 {
 		for _, chld := range ssm.childs {

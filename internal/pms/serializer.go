@@ -10,17 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/tagparser"
+	"github.com/mariotoffia/ssm.git/support"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
-
-// FullNameField contains the full pms name and
-// Field metadata including the reflect.Value
-type FullNameField struct {
-	FullName string
-	Field    reflect.StructField
-	Value    reflect.Value
-}
 
 // Serializer handles the parameter store communication
 type Serializer struct {
@@ -65,7 +58,7 @@ func New(service string) (*Serializer, error) {
 
 // Get parameters from the parameterstore and populates the node graph with values.
 // Any fields that was not able to be set is reported in the FullNameField string map.
-func (p *Serializer) Get(node *reflectparser.SsmNode) (map[string]FullNameField, error) {
+func (p *Serializer) Get(node *reflectparser.SsmNode) (map[string]support.FullNameField, error) {
 	m := map[string]*reflectparser.SsmNode{}
 	issecure := p.nodesToParameterMap(node, m)
 	paths := p.extractParameters(m)
@@ -82,21 +75,28 @@ func (p *Serializer) Get(node *reflectparser.SsmNode) (map[string]FullNameField,
 		return nil, err
 	}
 
-	im := map[string]FullNameField{}
+	im := p.handleInvalidRequestParameters(invalid, m)
+	err = p.populate(node, prms)
+
+	return im, err
+}
+
+func (p *Serializer) handleInvalidRequestParameters(invalid []string, m map[string]*reflectparser.SsmNode) map[string]support.FullNameField {
+	im := map[string]support.FullNameField{}
+
 	if len(invalid) > 0 {
 		for _, name := range invalid {
 			if val, ok := m[name]; ok {
-				im[name] = FullNameField{FullName: val.Tag().FullName(), Field: val.Field(), Value: val.Value()}
+				im[name] = support.FullNameField{RemoteName: val.Tag().FullName(), LocalName: val.FqName(),
+					Field: val.Field(), Value: val.Value()}
 			} else {
 				log.Warn().Str("service", p.service).Msgf("Could not find %s in node map", name)
 			}
 		}
 	}
 
-	err = p.populate(node, prms)
-	return im, err
+	return im
 }
-
 func (p *Serializer) populate(node *reflectparser.SsmNode, params map[string]ssm.Parameter) error {
 	node.EnsureInstance(false)
 

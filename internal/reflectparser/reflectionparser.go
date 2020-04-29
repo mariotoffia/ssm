@@ -1,6 +1,7 @@
 package reflectparser
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -31,7 +32,7 @@ func (p *ReflectionParser) Parse(prefix string, v reflect.Value) (SsmNode, error
 
 	// Dereference the pointer
 	node.v = reflect.Indirect(v)
-	nodes, err := p.parseStruct(&node, prefix, node.v)
+	nodes, err := p.parseStruct("", &node, prefix, node.v)
 
 	if err != nil {
 		return SsmNode{root: true, parent: nil}, err
@@ -41,7 +42,7 @@ func (p *ReflectionParser) Parse(prefix string, v reflect.Value) (SsmNode, error
 	return node, nil
 }
 
-func (p *ReflectionParser) parseStruct(parent *SsmNode, prefix string, v reflect.Value) ([]SsmNode, error) {
+func (p *ReflectionParser) parseStruct(nav string, parent *SsmNode, prefix string, v reflect.Value) ([]SsmNode, error) {
 	t := v.Type()
 	nodes := []SsmNode{}
 
@@ -51,7 +52,7 @@ func (p *ReflectionParser) parseStruct(parent *SsmNode, prefix string, v reflect
 
 		switch fv.Kind() {
 		case reflect.Struct:
-			node, err := p.parseSubStruct(nodes, t, fv, ft, parent, prefix)
+			node, err := p.parseSubStruct(renderFqName(nav, ft), nodes, t, fv, ft, parent, prefix)
 			if err != nil {
 				return nil, err
 			}
@@ -60,7 +61,7 @@ func (p *ReflectionParser) parseStruct(parent *SsmNode, prefix string, v reflect
 			// Get the value it points to
 			tv := reflect.Indirect(fv)
 			if tv.IsValid() {
-				node, err := p.parseSubStruct(nodes, t, tv, ft, parent, prefix)
+				node, err := p.parseSubStruct(renderFqName(nav, ft), nodes, t, tv, ft, parent, prefix)
 				if err != nil {
 					return nil, err
 				}
@@ -75,10 +76,10 @@ func (p *ReflectionParser) parseStruct(parent *SsmNode, prefix string, v reflect
 			// Store tag for field
 			if tag != nil {
 				if e := log.Debug(); e.Enabled() {
-					e.Str("svc", p.service).Msgf("struct: '%s' field: '%s' parsed: '%+v' full Name: '%s'", t.Name(), ft.Name, tag, tag.FullName())
+					e.Str("svc", p.service).Msgf("struct: '%s' field: '%s' parsed: '%+v' full Name: '%s'", t.Name(), renderFqName(nav, ft), tag, tag.FullName())
 				}
 
-				nodes = append(nodes, SsmNode{t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
+				nodes = append(nodes, SsmNode{fqname: renderFqName(nav, ft), t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
 			}
 		}
 	}
@@ -86,13 +87,20 @@ func (p *ReflectionParser) parseStruct(parent *SsmNode, prefix string, v reflect
 	return nodes, nil
 }
 
+func renderFqName(nav string, ft reflect.StructField) string {
+	if nav == "" {
+		return ft.Name
+	}
+	return fmt.Sprintf("%s.%s", nav, ft.Name)
+}
+
 // The ft struct field is of a struct kind and hence we need to parse all it's
 // fields and add those as children
-func (p *ReflectionParser) parseSubStruct(nodes []SsmNode, t reflect.Type, fv reflect.Value,
+func (p *ReflectionParser) parseSubStruct(nav string, nodes []SsmNode, t reflect.Type, fv reflect.Value,
 	ft reflect.StructField, parent *SsmNode, prefix string) (*SsmNode, error) {
 
-	node := SsmNode{t: t, f: ft, v: fv, root: false, parent: parent}
-	cn, err := p.parseStruct(&node, prefix+"/"+strings.ToLower(ft.Name), fv)
+	node := SsmNode{fqname: nav, t: t, f: ft, v: fv, root: false, parent: parent}
+	cn, err := p.parseStruct(nav, &node, prefix+"/"+strings.ToLower(ft.Name), fv)
 
 	if err != nil {
 		return nil, err
