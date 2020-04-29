@@ -15,7 +15,6 @@ import (
 type Serializer struct {
 	hasconfig bool
 	config    aws.Config
-	region    string
 	service   string
 	env       string
 	tier      ssm.ParameterTier
