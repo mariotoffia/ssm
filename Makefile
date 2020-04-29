@@ -12,7 +12,8 @@ testverbose:
 	@go test -v -cover ./...
 dep:
 	@go get -v
+	@go mod graph
 tidy:
-	go mod tidy
+	@go mod tidy
 play:
-	go test -v -run TestLek
+	@go test -v -run TestLek
