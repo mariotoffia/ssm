@@ -10,6 +10,8 @@ test:
 	@go test -cover ./...
 testverbose:
 	@go test -v -cover ./...
+testclean:
+	@go clean -testcache
 dep:
 	@go get -v
 	@go mod graph

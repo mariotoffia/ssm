@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	err := testsupport.DefaultProvisionPms()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestWihSingleStringStruct(t *testing.T) {
 	var test testsupport.SingleStringStruct
 
