@@ -11,7 +11,7 @@ func TestWihSingleStringStruct(t *testing.T) {
 	var test testsupport.SingleStringStruct
 
 	s := NewSsmSerializer("eap", "test-service")
-	err := s.Unmarshal(&test)
+	_, err := s.Unmarshal(&test)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -23,7 +23,7 @@ func TestWihSingleNestedStruct(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
 	s := NewSsmSerializer("eap", "test-service")
-	err := s.Unmarshal(&test)
+	_, err := s.Unmarshal(&test)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

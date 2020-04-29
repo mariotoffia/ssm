@@ -81,7 +81,9 @@ func (p *Serializer) Get(node *reflectparser.SsmNode) (map[string]support.FullNa
 	return im, err
 }
 
-func (p *Serializer) handleInvalidRequestParameters(invalid []string, m map[string]*reflectparser.SsmNode) map[string]support.FullNameField {
+func (p *Serializer) handleInvalidRequestParameters(invalid []string,
+	m map[string]*reflectparser.SsmNode) map[string]support.FullNameField {
+
 	im := map[string]support.FullNameField{}
 
 	if len(invalid) > 0 {
