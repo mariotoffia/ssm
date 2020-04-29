@@ -7,14 +7,14 @@ The intention to this library to simplify fetching one or more parameters, secre
 
 ```go
 type MyContext struct {
-  Caller string
-  TotalTimeout int `pms:"timeout"`
+  Caller        string
+  TotalTimeout  int `pms:"timeout"`
   Db struct {
     ConnectString string `pms:"connection, prefix=global/accountingdb"`
-    BatchSize int `pms:"batchsize"`
-    DbTimeout int `pms:"timeout"`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
-    Signer string
+    Signer        string
   }
 }
 
@@ -40,14 +40,14 @@ The above example uses keys from
 In combination with [env](https://github.com/codingconcepts/env) this is a great way of centrally adminitrating your configuration but allow override of those using environment variables. For example
 ```go
 type MyContext struct {
-  Caller string
-  TotalTimeout int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Caller        string
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
     ConnectString string `pms:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
-    BatchSize int `pms:"batchsize"`
-    DbTimeout int `pms:"timeout"`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
-    Signer string
+    Signer        string
   }
 }
 
