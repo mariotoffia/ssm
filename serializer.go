@@ -13,16 +13,25 @@ import (
 // Serializer handles un-/marshaling of SSM data
 // back and forth go struct fields.
 type Serializer struct {
-	config  aws.Config
-	region  string
-	service string
-	env     string
-	tier    ssm.ParameterTier
+	hasconfig bool
+	config    aws.Config
+	region    string
+	service   string
+	env       string
+	tier      ssm.ParameterTier
 }
 
 // NewSsmSerializer creates a new serializer with default aws.Config
 func NewSsmSerializer(env string, service string) *Serializer {
 	return &Serializer{env: env, service: service, tier: ssm.ParameterTierStandard}
+}
+
+// NewSsmSerializerFromConfig creates a new serializer using the inparam config instead
+// of the default config.
+func NewSsmSerializerFromConfig(env string, service string, config aws.Config) *Serializer {
+	return &Serializer{env: env, service: service,
+		tier: ssm.ParameterTierStandard, config: config,
+		hasconfig: true}
 }
 
 // SetTier allows for change the tier. By default Serializer uses
@@ -37,10 +46,26 @@ func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
 // with data from the Systems Manager. It returns a map containg fields that
 // where requested but not set
 func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField, error) {
+
 	tp := reflect.ValueOf(v)
 	node, err := reflectparser.New(s.env, s.service).Parse("", tp)
+
 	if err != nil {
 		return nil, err
+	}
+
+	pmsr, err := s.getAndConfigurePms()
+	if err != nil {
+		return nil, err
+	}
+
+	invalid, err := pmsr.Get(&node)
+	return invalid, err
+}
+
+func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
+	if s.hasconfig {
+		return pms.NewFromConfig(s.config, s.service).SetTier(s.tier), nil
 	}
 
 	pmsr, err := pms.New(s.service)
@@ -48,8 +73,5 @@ func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField,
 		return nil, err
 	}
 
-	pmsr.SetTier(s.tier)
-
-	invalid, err := pmsr.Get(&node)
-	return invalid, err
+	return pmsr.SetTier(s.tier), nil
 }
