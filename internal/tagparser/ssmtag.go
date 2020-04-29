@@ -35,7 +35,7 @@ type PmsTag struct {
 	// If encrypted, which key id (registered with the encoder) should
 	// be provided to parameter store when created. This will resolve to
 	// a arn to be used when manageing encrypted entries. If ARN is specified
-	// it will use that explicit ARN instead. If id is default-account it uses
+	// it will use that explicit ARN instead. If id is default it uses
 	// the default account KMS key to encrypt the value. All local registered
 	// keys (with the encoder / decoder) begins with local://
 	keyID string
@@ -62,7 +62,7 @@ func (t *PmsTag) FullName() string { return fmt.Sprintf("%s/%s", t.prefix, t.nam
 func (t *PmsTag) Secure() bool { return t.keyID != "" }
 
 // DefaultAccountKey is for determine if the backing key is the account default KMS key
-func (t *PmsTag) DefaultAccountKey() bool { return t.keyID == "default-account" }
+func (t *PmsTag) DefaultAccountKey() bool { return t.keyID == "default" }
 
 // IsLocalKey returns true if the real arn to the key is registered in the encoder / decoder
 func (t *PmsTag) IsLocalKey() bool { return strings.HasPrefix(t.keyID, "local://") }
@@ -70,9 +70,6 @@ func (t *PmsTag) IsLocalKey() bool { return strings.HasPrefix(t.keyID, "local://
 // GetKeyName gets the keyname without namespaces for local, full for arn and default-account
 // for such
 func (t *PmsTag) GetKeyName() string {
-	if t.DefaultAccountKey() {
-		return "default-account"
-	}
 	if t.IsLocalKey() {
 		return t.keyID[8:]
 	}
