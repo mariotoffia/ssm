@@ -45,7 +45,7 @@ func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
 // with data from the Systems Manager. It returns a map containg fields that
 // where requested but not set.
 func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField, error) {
-	return s.UnmarshalFilterd(v, support.FieldFilters{})
+	return s.UnmarshalFilterd(v, nil)
 }
 
 // UnmarshalFilterd creates the inparam struct pointer (and sub structs as well).
@@ -55,7 +55,11 @@ func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField,
 // & exclusion filters. The type is only initialized with the non excluded or explicit
 // included field. By default  property is excluded. See @support.FieldFilters for more
 // informatio about filtering.
-func (s *Serializer) UnmarshalFilterd(v interface{}, filter support.FieldFilters) (map[string]support.FullNameField, error) {
+func (s *Serializer) UnmarshalFilterd(v interface{}, filter *support.FieldFilters) (map[string]support.FullNameField, error) {
+
+	if nil == filter {
+		filter = support.NewFilters()
+	}
 
 	tp := reflect.ValueOf(v)
 	node, err := reflectparser.New(s.env, s.service).Parse("", tp)

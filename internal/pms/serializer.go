@@ -60,7 +60,7 @@ func New(service string) (*Serializer, error) {
 // Any fields that was not able to be set is reported in the FullNameField string map.
 // FullNameField do not include those fields filtered out in exclusion filter.
 func (p *Serializer) Get(node *reflectparser.SsmNode,
-	filter support.FieldFilters) (map[string]support.FullNameField, error) {
+	filter *support.FieldFilters) (map[string]support.FullNameField, error) {
 
 	m := map[string]*reflectparser.SsmNode{}
 	issecure := p.nodesToParameterMap(node, m, filter)
@@ -119,8 +119,6 @@ func (p *Serializer) populate(node *reflectparser.SsmNode, params map[string]ssm
 
 	if val, ok := params[node.Tag().FullName()]; ok {
 		setStructValue(node, val)
-	} else {
-		log.Debug().Msgf("no value for property name: %s", node.Tag().FullName())
 	}
 
 	return nil
@@ -188,7 +186,7 @@ func (p *Serializer) extractParameters(paths map[string]*reflectparser.SsmNode) 
 // the associated with the node itself. This is to gain
 // a more accessable structure to seach for nodes.
 func (p *Serializer) nodesToParameterMap(node *reflectparser.SsmNode,
-	paths map[string]*reflectparser.SsmNode, filter support.FieldFilters) bool {
+	paths map[string]*reflectparser.SsmNode, filter *support.FieldFilters) bool {
 	issecure := false
 	if node.HasChildren() {
 		for _, n := range node.Children() {

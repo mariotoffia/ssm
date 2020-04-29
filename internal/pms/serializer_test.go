@@ -24,7 +24,7 @@ func TestWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(&node, support.FieldFilters{})
+	_, err = pmsr.Get(&node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -50,7 +50,7 @@ func TestWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(&node, support.FieldFilters{})
+	_, err = pmsr.Get(&node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
