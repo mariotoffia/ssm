@@ -18,6 +18,19 @@ func ProvisionPms(prms []ssm.PutParameterInput) error {
 		return errors.Errorf("Failed to load AWS config %v", err)
 	}
 
+	delete := ssm.DeleteParametersInput{}
+	for _, p := range prms {
+		if nil != p.Overwrite && *p.Overwrite {
+			delete.Names = append(delete.Names, *p.Name)
+		}
+	}
+
+	if len(delete.Names) > 0 {
+		if err := DeletePms(delete); err != nil {
+			return err
+		}
+	}
+
 	client := ssm.New(awscfg)
 	for _, p := range prms {
 		req := client.PutParameterRequest(&p)
@@ -28,6 +41,24 @@ func ProvisionPms(prms []ssm.PutParameterInput) error {
 
 		log.Debug().Msgf("Wrote name: %s value: %s got version %d", *p.Name, *p.Value, *resp.Version)
 	}
+	return nil
+}
+
+// DeletePms removes a set of Parameter Store Parameters
+func DeletePms(prms ssm.DeleteParametersInput) error {
+	awscfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		return errors.Errorf("Failed to load AWS config %v", err)
+	}
+
+	client := ssm.New(awscfg)
+	req := client.DeleteParametersRequest(&prms)
+	resp, err := req.Send(context.TODO())
+	if err != nil {
+		return err
+	}
+
+	log.Debug().Msgf("deleted: %s invalid: %s", resp.DeletedParameters, resp.InvalidParameters)
 	return nil
 }
 
