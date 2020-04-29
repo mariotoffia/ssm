@@ -11,7 +11,7 @@ test:
 testverbose:
 	@go test -v -cover ./...
 dep:
-	@go get
+	@go get -v
 tidy:
 	go mod tidy
 play:
