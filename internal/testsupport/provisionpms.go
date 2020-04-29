@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-/// ProvisionPms will provision all parameters.
+// ProvisionPms will provision all parameters.
 // If already existant, it will just be overwritten.
 func ProvisionPms(prms []ssm.PutParameterInput) error {
 	awscfg, err := external.LoadDefaultAWSConfig()
