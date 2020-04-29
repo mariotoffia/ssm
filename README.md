@@ -56,6 +56,7 @@ var ctx MyContext
 s := ssm.NewSsmSerializer("eap", "test-service")
 if _, err := s.Unmarshal(&ctx); err != nil  {
   panic()
+}
 
 if err := env.set(&ctx); err != nil  {
   panic()
@@ -64,3 +65,42 @@ if err := env.set(&ctx); err != nil  {
 // the ctx.TotalTimeout will be 99 and hence overridden locally
 fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout, ctx.Db.ConnectString)
 ```
+If you don't want all properties to be set (faster response-times) use a filter to include & exclude properties. Filters also work in the hiarchy, i.e. you may set a exclusion for on a field that do have nested sub-structs beneach
+and all of those will be automatically excluded. However, you may override that both on tree level or explicit on leaf (a specific field property that is *not* a sub-struct). For example
+
+```go
+
+type MyContext struct {
+  Caller        string
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Db struct {
+    ConnectString string `pms:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
+    UpdateRevenue bool
+    Signer        string
+    Flow          struct {
+      Base  int `pms:base`
+      Prime int `pms:prime`
+    }
+  }
+}
+
+var ctx MyContext
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+if _, err := s.UnmarshalFilterd(&ctx,
+              support.NewFilters().
+                      Exclude("Db").
+                      Include("Db.ConnectString").
+                      Include("Db.Misc")); err != nil  {
+  panic()
+}
+
+fmt.Printf("got total timeout of %d and connect using %s (base: %d, prime %d)", 
+    ctx.TotalTimeout, ctx.Db.ConnectString, ctx.Db.Flow.Base, ctx.Db.Flow.Prime)
+
+fmt.Printf("No data for BatchSize %d and DbTimeout %d", ctx.Db.BatchSize, ctx.Db.DbTimeout)
+```
+
+The above sample will first _Exclude_ everything beneath the Db node. But since we have explicit (Leaf) and Node implicit Includes *beneath* the exclusion, those properties will be included. In this case `ConnectString`, everything beneatch `Flow` is included. However, everything else beneath `Db` is excluded, including `BatchSize` and `DbTimeout`.

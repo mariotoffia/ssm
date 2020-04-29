@@ -50,3 +50,21 @@ func TestWihSingleNestedStructFiltered(t *testing.T) {
 	assert.Equal(t, 0, test.Sub.Apa) // Since not included
 	assert.Equal(t, "test svc name", test.Sub.Nu)
 }
+
+func TestNonBackedVariableInStructReturnsAsMissingFullNameField(t *testing.T) {
+	var test testsupport.StructWithNonExistantVariable
+
+	s := NewSsmSerializer("eap", "test-service")
+	invalid, err := s.Unmarshal(&test)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "The name", test.Name)
+	assert.Equal(t, 43, test.Sub.Apa)
+	assert.Equal(t, "test svc name", test.Sub.Nu)
+	assert.Equal(t, "", test.Sub.Missing)
+	assert.Equal(t, 1, len(invalid))
+	assert.Equal(t, "Sub.Missing", invalid["Sub.Missing"].LocalName)
+	assert.Equal(t, "/eap/test-service/sub/gonemissing", invalid["Sub.Missing"].RemoteName)
+}

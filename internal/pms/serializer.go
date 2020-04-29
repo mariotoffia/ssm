@@ -92,8 +92,8 @@ func (p *Serializer) handleInvalidRequestParameters(invalid []string,
 	if len(invalid) > 0 {
 		for _, name := range invalid {
 			if val, ok := m[name]; ok {
-				im[name] = support.FullNameField{RemoteName: val.Tag().FullName(), LocalName: val.FqName(),
-					Field: val.Field(), Value: val.Value()}
+				im[val.FqName()] = support.FullNameField{RemoteName: val.Tag().FullName(),
+					LocalName: val.FqName(), Field: val.Field(), Value: val.Value()}
 			} else {
 				log.Warn().Str("service", p.service).Msgf("Could not find %s in node map", name)
 			}
