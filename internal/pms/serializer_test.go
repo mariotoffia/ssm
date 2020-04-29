@@ -6,6 +6,7 @@ import (
 
 	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/testsupport"
+	"github.com/mariotoffia/ssm.git/support"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +24,7 @@ func TestWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(&node)
+	_, err = pmsr.Get(&node, support.FieldFilters{})
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -49,7 +50,7 @@ func TestWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(&node)
+	_, err = pmsr.Get(&node, support.FieldFilters{})
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

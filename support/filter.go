@@ -27,7 +27,10 @@ type FieldFilter struct {
 }
 
 // FieldFilters contains all filters to be applied
-// on an operation
+// on an operation. Note that an exclusion may be done
+// on a higer position in the tree but may be overridden
+// by either a explicit include or a inclusion node below the
+// exclusion but higer up than the field specified by fqpath
 type FieldFilters struct {
 	// Zero or more filters
 	Filters []FieldFilter

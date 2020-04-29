@@ -58,9 +58,12 @@ func New(service string) (*Serializer, error) {
 
 // Get parameters from the parameterstore and populates the node graph with values.
 // Any fields that was not able to be set is reported in the FullNameField string map.
-func (p *Serializer) Get(node *reflectparser.SsmNode) (map[string]support.FullNameField, error) {
+// FullNameField do not include those fields filtered out in exclusion filter.
+func (p *Serializer) Get(node *reflectparser.SsmNode,
+	filter support.FieldFilters) (map[string]support.FullNameField, error) {
+
 	m := map[string]*reflectparser.SsmNode{}
-	issecure := p.nodesToParameterMap(node, m)
+	issecure := p.nodesToParameterMap(node, m, filter)
 	paths := p.extractParameters(m)
 
 	params := &ssm.GetParametersInput{
@@ -184,19 +187,22 @@ func (p *Serializer) extractParameters(paths map[string]*reflectparser.SsmNode) 
 // it chcks for the tag SsmType = pms. The full name is
 // the associated with the node itself. This is to gain
 // a more accessable structure to seach for nodes.
-func (p *Serializer) nodesToParameterMap(node *reflectparser.SsmNode, paths map[string]*reflectparser.SsmNode) bool {
+func (p *Serializer) nodesToParameterMap(node *reflectparser.SsmNode,
+	paths map[string]*reflectparser.SsmNode, filter support.FieldFilters) bool {
 	issecure := false
 	if node.HasChildren() {
 		for _, n := range node.Children() {
-			if p.nodesToParameterMap(&n, paths) {
+			if p.nodesToParameterMap(&n, paths, filter) {
 				issecure = true
 			}
 		}
 	} else {
 		if node.Tag().SsmType() == tagparser.Pms {
-			paths[node.Tag().FullName()] = node
-			if node.Tag().Secure() {
-				issecure = true
+			if filter.IsIncluded(node.FqName()) {
+				paths[node.Tag().FullName()] = node
+				if node.Tag().Secure() {
+					issecure = true
+				}
 			}
 		}
 	}
