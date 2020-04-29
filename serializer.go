@@ -12,8 +12,14 @@ import (
 // back and forth go struct fields.
 type Serializer struct {
 	config  aws.Config
+	region  string
 	service string
 	env     string
+}
+
+// NewSsmSerializer creates a new serializer with default aws.Config
+func NewSsmSerializer(env string, service string) *Serializer {
+	return &Serializer{env: env, service: service}
 }
 
 // Unmarshal creates the inparam struct pointer (and sub structs as well).
