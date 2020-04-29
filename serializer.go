@@ -55,7 +55,8 @@ func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField,
 // & exclusion filters. The type is only initialized with the non excluded or explicit
 // included field. By default  property is excluded. See @support.FieldFilters for more
 // informatio about filtering.
-func (s *Serializer) UnmarshalFilterd(v interface{}, filter *support.FieldFilters) (map[string]support.FullNameField, error) {
+func (s *Serializer) UnmarshalFilterd(v interface{},
+	filter *support.FieldFilters) (map[string]support.FullNameField, error) {
 
 	if nil == filter {
 		filter = support.NewFilters()
