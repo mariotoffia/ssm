@@ -21,7 +21,7 @@ type MyContext struct {
 var ctx MyContext
 
 s := ssm.NewSsmSerializer("eap", "test-service")
-err := s.Unmarshal(&ctx)
+_, err := s.Unmarshal(&ctx)
 if err != nil {
   panic()
 }
@@ -37,3 +37,30 @@ The above example uses keys from
 + /eap/test-service/db/batchsize
 + /eap/test-service/db/timeout
 
+In combination with [env](https://github.com/codingconcepts/env) this is a great way of centrally adminitrating your configuration but allow override of those using environment variables. For example
+```go
+type MyContext struct {
+  Caller string
+  TotalTimeout int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Db struct {
+    ConnectString string `pms:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    BatchSize int `pms:"batchsize"`
+    DbTimeout int `pms:"timeout"`
+    UpdateRevenue bool
+    Signer string
+  }
+}
+
+var ctx MyContext
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+if _, err := s.Unmarshal(&ctx); err != nil  {
+  panic()
+
+if err := env.set(&ctx); err != nil  {
+  panic()
+}
+// If we e.g. set the TOTAL_TIMEOUT = 99 in the env for the lambda 
+// the ctx.TotalTimeout will be 99 and hence overridden locally
+fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout, ctx.Db.ConnectString)
+```
