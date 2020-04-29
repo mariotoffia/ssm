@@ -20,7 +20,7 @@ type MyContext struct {
 
 var ctx MyContext
 
-s := NewSsmSerializer("eap", "test-service")
+s := ssm.NewSsmSerializer("eap", "test-service")
 err := s.Unmarshal(&ctx)
 if err != nil {
   panic()
@@ -30,4 +30,10 @@ fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout,
 ```
 
 The above example shows how to blend _PMS_ backed data with data set by the service itself to perform the work. Note that the `ConnectString` is a global setting and hence independant on the service it will be retrieved from _/{env}/global/accountingdb/connection_ parameter. In this way it is possible to constrain parameters to a single service, share between services or have notion of global parameters. Environment is *always* present, thus mandatory.
+
+The above example uses keys from 
++ /eap/global/accountingdb/connection
++ /eap/test-service/timeout
++ /eap/test-service/db/batchsize
++ /eap/test-service/db/timeout
 
