@@ -41,7 +41,7 @@ func NewFromConfig(config aws.Config, service string) *Serializer {
 func NewWithRegion(region string, service string) (*Serializer, error) {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		return &Serializer{}, errors.Errorf("Failed to load AWS config %v", err)
+		return &Serializer{}, errors.Wrapf(err, "Failed to load AWS config")
 	}
 
 	if len(region) > 0 {
@@ -150,7 +150,7 @@ func setStructValue(node reflectparser.SsmNode, val ssm.Parameter) error {
 func setStructIntValue(node reflectparser.SsmNode, val ssm.Parameter) error {
 	ival, err := strconv.ParseInt(*val.Value, 10, 64)
 	if err != nil {
-		return errors.Errorf("Config value %s = %s is not a valid integer", *val.Name, *val.Value)
+		return errors.Wrapf(err, "Config value %s = %s is not a valid integer", *val.Name, *val.Value)
 	}
 	node.Value().SetInt(ival)
 	return nil
@@ -170,7 +170,7 @@ func (p *Serializer) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.
 
 		resp, err = req.Send(context.TODO())
 		if err != nil {
-			return nil, nil, errors.Errorf("Failed fetch pms config entries %+v", params)
+			return nil, nil, errors.Wrapf(err, "Failed fetch pms config entries %v", params)
 		}
 
 		if len(resp.Parameters) == 0 && len(resp.InvalidParameters) > 0 {
@@ -179,8 +179,6 @@ func (p *Serializer) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.
 			success = true
 		}
 	}
-
-	log.Debug().Msg("done getfrom aws!")
 
 	m := map[string]ssm.Parameter{}
 	for _, p := range resp.Parameters {
