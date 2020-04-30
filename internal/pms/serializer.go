@@ -2,8 +2,6 @@ package pms
 
 import (
 	"context"
-	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -66,8 +64,7 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 
 	m := map[string]*reflectparser.SsmNode{}
 	issecure := common.NodesToParameterMap(node, m, filter, tagparser.Pms)
-	// TODO: need to split up into 10 parameters per get
-	paths := p.extractParameters(m)
+	paths := common.ExtractParameters(m)
 
 	params := &ssm.GetParametersInput{
 		Names:          paths,
@@ -126,38 +123,11 @@ func (p *Serializer) populate(node *reflectparser.SsmNode, params map[string]ssm
 	}
 
 	if val, ok := params[node.Tag().FullName()]; ok {
-		setStructValue(node, val)
+		common.SetStructValueFromString(node, *val.Name, *val.Value)
 	}
 
 	return nil
 }
-
-func setStructValue(node *reflectparser.SsmNode, val ssm.Parameter) error {
-
-	log.Debug().Msgf("setting: %s (%s) val: %s", node.Tag().FullName(), *val.Name, *val.Value)
-
-	switch node.Value().Kind() {
-
-	case reflect.String:
-		node.Value().SetString(*val.Value)
-
-	case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int8:
-		setStructIntValue(node, val)
-	}
-
-	return nil
-}
-
-func setStructIntValue(node *reflectparser.SsmNode, val ssm.Parameter) error {
-	ival, err := strconv.ParseInt(*val.Value, 10, 64)
-	if err != nil {
-		return errors.Wrapf(err, "Config value %s = %s is not a valid integer", *val.Name, *val.Value)
-	}
-	node.Value().SetInt(ival)
-	return nil
-}
-
-var cnt int = 0
 
 // Invoke get towards aws parameter store
 func (p *Serializer) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.Parameter, []string, error) {
@@ -188,15 +158,4 @@ func (p *Serializer) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.
 	}
 
 	return m, resp.InvalidParameters, nil
-}
-
-// Flattern the parameters in order to provide queries against
-// the parameter store.
-func (p *Serializer) extractParameters(paths map[string]*reflectparser.SsmNode) []string {
-	arr := make([]string, 0, len(paths))
-	for key := range paths {
-		arr = append(arr, key)
-	}
-
-	return arr
 }

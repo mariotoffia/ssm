@@ -93,7 +93,14 @@ type AsmTag struct {
 	// All local registered keys (with the encoder / decoder) begins with local://
 	// and the name of the key to be resolved to a ARN, Key ID, or alias.
 	keyID string
-	tags  map[string]string
+	// This value is typically a UUID-type (https://wikipedia.org/wiki/Universally_unique_identifier)
+	// value with 32 hexadecimal digits. Specifies the unique identifier of the version of the secret.
+	versionID string
+	// Specifies the secret version that you want to retrieve by the staging label
+	// attached to the version. If no versionStage or versionID is specified AWSCURRENT
+	// as versionStage is used
+	versionStage string
+	tags         map[string]string
 }
 
 // SsmType returns Asm
@@ -113,6 +120,14 @@ func (t *AsmTag) FullName() string { return fmt.Sprintf("%s/%s", t.prefix, t.nam
 
 // Secure returns true if this entry is backed by a encryption key
 func (t *AsmTag) Secure() bool { return true }
+
+// VersionID specifies the unique identifier of the version of the secret.
+func (t *AsmTag) VersionID() string { return t.versionID }
+
+// VersionStage specifies the secret version that you want to retrieve by the staging label
+// attached to the version. If no versionStage or versionID is specified AWSCURRENT
+// as versionStage is used
+func (t *AsmTag) VersionStage() string { return t.versionStage }
 
 // DefaultAccountKey is for determine if the backing key is the account default KMS key
 func (t *AsmTag) DefaultAccountKey() bool { return t.keyID == "default" }
