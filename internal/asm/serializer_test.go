@@ -55,9 +55,10 @@ func TestStructWithSubStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	assert.Equal(t, "The name", test.Name)
 	assert.Equal(t, 43, test.AsmSub.Apa2)
 	assert.Equal(t, "test svc name", test.AsmSub.Nu2)
+
 	res := node.Value().Interface().(testsupport.StructWithSubStruct)
-	assert.Equal(t, "The name", res.Name)
+	assert.Equal(t, 43, res.AsmSub.Apa2)
+	assert.Equal(t, "test svc name", res.AsmSub.Nu2)
 }

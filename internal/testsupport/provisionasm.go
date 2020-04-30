@@ -28,7 +28,8 @@ func DefaultProvisionAsm() {
 }
 
 var onlydelete = false
-var disable = false
+var delete = false
+var disable = true
 
 // ProvisionAsm provision secrets
 func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
@@ -41,9 +42,11 @@ func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 		panic(err)
 	}
 
-	for _, p := range prms {
-		DeleteAsm(secretsmanager.DeleteSecretInput{SecretId: aws.String(*p.Name),
-			ForceDeleteWithoutRecovery: aws.Bool(true)})
+	if delete {
+		for _, p := range prms {
+			DeleteAsm(secretsmanager.DeleteSecretInput{SecretId: aws.String(*p.Name),
+				ForceDeleteWithoutRecovery: aws.Bool(true)})
+		}
 	}
 
 	if onlydelete {

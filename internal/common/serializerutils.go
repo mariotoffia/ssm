@@ -19,8 +19,9 @@ func NodesToParameterMap(node *reflectparser.SsmNode,
 	paths map[string]*reflectparser.SsmNode, filter *support.FieldFilters, st tagparser.StoreType) bool {
 	issecure := false
 	if node.HasChildren() {
-		for _, n := range node.Children() {
-			if NodesToParameterMap(&n, paths, filter, st) {
+		children := node.Children()
+		for i := range node.Children() {
+			if NodesToParameterMap(&children[i], paths, filter, st) {
 				issecure = true
 			}
 		}
