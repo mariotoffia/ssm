@@ -60,10 +60,10 @@ func New(service string) (*Serializer, error) {
 // Get parameters from the parameterstore and populates the node graph with values.
 // Any fields that was not able to be set is reported in the FullNameField string map.
 // FullNameField do not include those fields filtered out in exclusion filter.
-func (p *Serializer) Get(node reflectparser.SsmNode,
+func (p *Serializer) Get(node *reflectparser.SsmNode,
 	filter *support.FieldFilters) (map[string]support.FullNameField, error) {
 
-	m := map[string]reflectparser.SsmNode{}
+	m := map[string]*reflectparser.SsmNode{}
 	issecure := p.nodesToParameterMap(node, m, filter)
 	// TODO: need to split up into 10 parameters per get
 	paths := p.extractParameters(m)
@@ -87,7 +87,7 @@ func (p *Serializer) Get(node reflectparser.SsmNode,
 }
 
 func (p *Serializer) handleInvalidRequestParameters(invalid []string,
-	m map[string]reflectparser.SsmNode) map[string]support.FullNameField {
+	m map[string]*reflectparser.SsmNode) map[string]support.FullNameField {
 
 	im := map[string]support.FullNameField{}
 
@@ -109,12 +109,12 @@ func (p *Serializer) handleInvalidRequestParameters(invalid []string,
 	}
 	return im
 }
-func (p *Serializer) populate(node reflectparser.SsmNode, params map[string]ssm.Parameter) error {
+func (p *Serializer) populate(node *reflectparser.SsmNode, params map[string]ssm.Parameter) error {
 	node.EnsureInstance(false)
 
 	if node.HasChildren() {
 		for _, n := range node.Children() {
-			p.populate(n, params)
+			p.populate(&n, params)
 		}
 		return nil
 	}
@@ -131,7 +131,7 @@ func (p *Serializer) populate(node reflectparser.SsmNode, params map[string]ssm.
 	return nil
 }
 
-func setStructValue(node reflectparser.SsmNode, val ssm.Parameter) error {
+func setStructValue(node *reflectparser.SsmNode, val ssm.Parameter) error {
 
 	log.Debug().Msgf("setting: %s (%s) val: %s", node.Tag().FullName(), *val.Name, *val.Value)
 
@@ -147,7 +147,7 @@ func setStructValue(node reflectparser.SsmNode, val ssm.Parameter) error {
 	return nil
 }
 
-func setStructIntValue(node reflectparser.SsmNode, val ssm.Parameter) error {
+func setStructIntValue(node *reflectparser.SsmNode, val ssm.Parameter) error {
 	ival, err := strconv.ParseInt(*val.Value, 10, 64)
 	if err != nil {
 		return errors.Wrapf(err, "Config value %s = %s is not a valid integer", *val.Name, *val.Value)
@@ -191,7 +191,7 @@ func (p *Serializer) getFromAws(params *ssm.GetParametersInput) (map[string]ssm.
 
 // Flattern the parameters in order to provide queries against
 // the parameter store.
-func (p *Serializer) extractParameters(paths map[string]reflectparser.SsmNode) []string {
+func (p *Serializer) extractParameters(paths map[string]*reflectparser.SsmNode) []string {
 	arr := make([]string, 0, len(paths))
 	for key := range paths {
 		arr = append(arr, key)
@@ -205,12 +205,12 @@ func (p *Serializer) extractParameters(paths map[string]reflectparser.SsmNode) [
 // it chcks for the tag SsmType = pms. The full name is
 // the associated with the node itself. This is to gain
 // a more accessable structure to seach for nodes.
-func (p *Serializer) nodesToParameterMap(node reflectparser.SsmNode,
-	paths map[string]reflectparser.SsmNode, filter *support.FieldFilters) bool {
+func (p *Serializer) nodesToParameterMap(node *reflectparser.SsmNode,
+	paths map[string]*reflectparser.SsmNode, filter *support.FieldFilters) bool {
 	issecure := false
 	if node.HasChildren() {
 		for _, n := range node.Children() {
-			if p.nodesToParameterMap(n, paths, filter) {
+			if p.nodesToParameterMap(&n, paths, filter) {
 				issecure = true
 			}
 		}
