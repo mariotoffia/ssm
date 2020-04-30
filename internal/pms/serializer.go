@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/mariotoffia/ssm.git/internal/common"
 	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/tagparser"
 	"github.com/mariotoffia/ssm.git/support"
@@ -64,7 +65,7 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 	filter *support.FieldFilters) (map[string]support.FullNameField, error) {
 
 	m := map[string]*reflectparser.SsmNode{}
-	issecure := p.nodesToParameterMap(node, m, filter)
+	issecure := common.NodesToParameterMap(node, m, filter, tagparser.Pms)
 	// TODO: need to split up into 10 parameters per get
 	paths := p.extractParameters(m)
 
@@ -198,32 +199,4 @@ func (p *Serializer) extractParameters(paths map[string]*reflectparser.SsmNode) 
 	}
 
 	return arr
-}
-
-// Grabs all FullNames on nodes that do have tag set
-// in order to get data fom parameter store. Note that
-// it chcks for the tag SsmType = pms. The full name is
-// the associated with the node itself. This is to gain
-// a more accessable structure to seach for nodes.
-func (p *Serializer) nodesToParameterMap(node *reflectparser.SsmNode,
-	paths map[string]*reflectparser.SsmNode, filter *support.FieldFilters) bool {
-	issecure := false
-	if node.HasChildren() {
-		for _, n := range node.Children() {
-			if p.nodesToParameterMap(&n, paths, filter) {
-				issecure = true
-			}
-		}
-	} else {
-		if node.Tag().SsmType() == tagparser.Pms {
-			if filter.IsIncluded(node.FqName()) {
-				paths[node.Tag().FullName()] = node
-				if node.Tag().Secure() {
-					issecure = true
-				}
-			}
-		}
-	}
-
-	return issecure
 }

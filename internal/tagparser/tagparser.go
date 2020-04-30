@@ -37,6 +37,8 @@ func ParseAsmTagString(s string, prefix string, env string, svc string) (SsmTag,
 				tag.name = kv[1]
 			case "prefix":
 				tag.prefix = renderPrefix(kv[1], env, "")
+			case "keyid":
+				tag.keyID = kv[1]
 			default:
 				tag.tags[kv[0]] = kv[1]
 			}

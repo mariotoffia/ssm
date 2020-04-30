@@ -83,8 +83,17 @@ type AsmTag struct {
 	prefix string
 	// The name of the secret
 	name string
+	// (Optional) Specifies the ARN, Key ID, or alias of the AWS KMS customer master
+	// key (CMK) to be used to encrypt the SecretString or SecretBinary values in
+	// the versions stored in this secret	keyID string
 	// All key values that do not have a special meaning will end up as tags
-	tags map[string]string
+	// If you don't specify this value, then Secrets Manager defaults to using the
+	// AWS account's default CMK (the one named aws/secretsmanager).
+	// If id is default it uses the default account KMS key to encrypt the value.
+	// All local registered keys (with the encoder / decoder) begins with local://
+	// and the name of the key to be resolved to a ARN, Key ID, or alias.
+	keyID string
+	tags  map[string]string
 }
 
 // SsmType returns Asm
@@ -104,3 +113,18 @@ func (t *AsmTag) FullName() string { return fmt.Sprintf("%s/%s", t.prefix, t.nam
 
 // Secure returns true if this entry is backed by a encryption key
 func (t *AsmTag) Secure() bool { return true }
+
+// DefaultAccountKey is for determine if the backing key is the account default KMS key
+func (t *AsmTag) DefaultAccountKey() bool { return t.keyID == "default" }
+
+// IsLocalKey returns true if the real arn to the key is registered in the encoder / decoder
+func (t *AsmTag) IsLocalKey() bool { return strings.HasPrefix(t.keyID, "local://") }
+
+// GetKeyName gets the keyname without namespaces for local, full for arn and default-account
+// for such
+func (t *AsmTag) GetKeyName() string {
+	if t.IsLocalKey() {
+		return t.keyID[8:]
+	}
+	return t.keyID
+}
