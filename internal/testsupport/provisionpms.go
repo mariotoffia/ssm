@@ -15,7 +15,7 @@ import (
 func ProvisionPms(prms []ssm.PutParameterInput) error {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		return errors.Errorf("Failed to load AWS config %v", err)
+		return errors.Wrapf(err, "Failed to load AWS config")
 	}
 
 	delete := ssm.DeleteParametersInput{}
@@ -48,7 +48,7 @@ func ProvisionPms(prms []ssm.PutParameterInput) error {
 func DeletePms(prms ssm.DeleteParametersInput) error {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		return errors.Errorf("Failed to load AWS config %v", err)
+		return errors.Wrapf(err, "Failed to load AWS config")
 	}
 
 	client := ssm.New(awscfg)

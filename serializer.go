@@ -74,7 +74,7 @@ func (s *Serializer) UnmarshalFilterd(v interface{},
 		return nil, err
 	}
 
-	invalid, err := pmsr.Get(&node, filter)
+	invalid, err := pmsr.Get(node, filter)
 	return invalid, err
 }
 
