@@ -18,17 +18,24 @@ func DefaultProvisionAsm() {
 		{Name: aws.String("/eap/simple/test"),
 			SecretString:       aws.String("The name"),
 			ClientRequestToken: aws.String(uuid.New().String())},
-		{Name: aws.String("/eap/test-service/sub/ext"),
+		{Name: aws.String("/eap/test-service/asmsub/ext"),
 			SecretString:       aws.String("43"),
 			ClientRequestToken: aws.String(uuid.New().String())},
-		{Name: aws.String("/eap/test-service/sub/myname"),
+		{Name: aws.String("/eap/test-service/asmsub/myname"),
 			SecretString:       aws.String("test svc name"),
 			ClientRequestToken: aws.String(uuid.New().String())},
 	})
 }
 
+var onlydelete = false
+var disable = false
+
 // ProvisionAsm provision secrets
 func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
+	if disable {
+		return
+	}
+
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		panic(err)
@@ -39,6 +46,9 @@ func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 			ForceDeleteWithoutRecovery: aws.Bool(true)})
 	}
 
+	if onlydelete {
+		return
+	}
 	svc := secretsmanager.New(awscfg)
 
 	for _, p := range prms {

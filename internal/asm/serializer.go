@@ -55,6 +55,10 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 	m := map[string]*reflectparser.SsmNode{}
 	common.NodesToParameterMap(node, m, filter, tagparser.Asm)
 
+	for key, val := range m {
+		log.Info().Msgf("m[%s] = '%v'", key, *val)
+	}
+
 	mprms := map[string]*secretsmanager.GetSecretValueOutput{}
 	im := map[string]support.FullNameField{}
 
@@ -63,7 +67,6 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 
 			if nasm, ok := n.Tag().(*tagparser.AsmTag); ok {
 				result, err := p.getFromAws(prm, nasm)
-				log.Debug().Msgf("got: %v err %v", result, err)
 
 				if err != nil {
 					if aerr, ok := err.(awserr.Error); ok {
@@ -76,6 +79,7 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 						}
 					}
 				} else {
+					log.Debug().Str("svc", p.service).Msgf("mprms[%s] = %v", n.FqName(), result)
 					mprms[n.FqName()] = result
 				}
 			} else {
@@ -126,11 +130,14 @@ func (p *Serializer) getFromAws(prm string,
 		params = &secretsmanager.GetSecretValueInput{SecretId: aws.String(prm), VersionId: aws.String(nasm.VersionID())}
 	}
 
-	client := secretsmanager.New(p.config)
+	log.Debug().Str("svc", p.service).Msgf("Fetching %v", *params)
 
+	client := secretsmanager.New(p.config)
 	req := client.GetSecretValueRequest(params)
 	resp, err := req.Send(context.TODO())
+
 	if err != nil {
+		log.Debug().Msgf("error for '%s': %v err %v", prm, resp, err)
 		return nil, err
 	}
 	return resp.GetSecretValueOutput, nil

@@ -27,6 +27,7 @@ func NodesToParameterMap(node *reflectparser.SsmNode,
 	} else {
 		if node.Tag().SsmType() == st {
 			if filter.IsIncluded(node.FqName()) {
+				log.Info().Msgf("ADDING %s = %v", node.Tag().FullName(), node)
 				paths[node.Tag().FullName()] = node
 				if node.Tag().Secure() {
 					issecure = true
