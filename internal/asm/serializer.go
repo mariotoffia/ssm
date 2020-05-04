@@ -68,7 +68,7 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 					if aerr, ok := err.(awserr.Error); ok {
 						switch aerr.Code() {
 						case secretsmanager.ErrCodeResourceNotFoundException:
-							im[nasm.FullName()] = support.FullNameField{LocalName: nasm.FullName(),
+							im[n.FqName()] = support.FullNameField{LocalName: n.FqName(),
 								RemoteName: prm, Field: node.Field(), Value: node.Value()}
 						default:
 							return nil, errors.Wrapf(err, "Failed fetch asm config entry %s", prm)

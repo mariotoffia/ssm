@@ -32,4 +32,9 @@ type StructPmsWithNonExistantVariable struct {
 		Nu      string `pms:"myname"`
 		Missing string `pms:"gonemissing"`
 	}
+	AsmSub struct {
+		Apa2     int    `asm:"ext"`
+		Nu2      string `asm:"myname"`
+		Missing2 string `asm:"gonemissing"`
+	}
 }

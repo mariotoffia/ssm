@@ -130,6 +130,8 @@ func (s *Serializer) unmarshal(v interface{},
 		if invalid == nil && len(invalid2) > 0 {
 			invalid = map[string]support.FullNameField{}
 		}
+
+		// Merge field errors from ASM with PMS errors
 		for key, value := range invalid2 {
 			invalid[key] = value
 		}
