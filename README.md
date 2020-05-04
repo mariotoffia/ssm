@@ -3,6 +3,8 @@ This library is intended to allow for encode / decode _go_ `struct` _fields_ fro
 
 This library do not yet even have a 0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal _pms_ and _asm_ fields.
 
+Only string value (**not binary**) for Secrets Manager is currently supported!
+
 The intention to this library to simplify fetching one or more parameters, secrets blended with other settings. It is also intended to be as efficient as possible and hence possible to filter, exclude or include, which properties that should participate in `Unmarshal` or `Marshal` operation. It uses go standard _Tag_ support to direct the `Serializer` how to `Marshal` or `Unmarshal` the data. For example
 
 ```go

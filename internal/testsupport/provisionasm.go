@@ -60,11 +60,32 @@ func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 		if _, err := req.Send(context.Background()); err != nil {
 			log.Debug().Msgf("Failed to create secret %s, checking if PUT works", *p.Name)
 
-			if e := putSecret(svc, p); e != nil {
+			if e := updateSecret(svc, p); e != nil {
 				log.Warn().Msgf("error when create secret %v", err)
 			}
 		}
 	}
+}
+
+func updateSecret(svc *secretsmanager.Client, i secretsmanager.CreateSecretInput) error {
+
+	req := svc.UpdateSecretRequest(&secretsmanager.UpdateSecretInput{
+		ClientRequestToken: i.ClientRequestToken,
+		SecretId:           i.Name,
+		SecretString:       i.SecretString,
+	})
+
+	if _, err := req.Send(context.Background()); err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			log.Warn().Msgf("Failed to update secret %s - error: %v", *i.Name, aerr.Error())
+		}
+
+		return err
+	}
+
+	log.Info().Msgf("Secret %s successfully updated", *i.Name)
+
+	return nil
 }
 
 func putSecret(svc *secretsmanager.Client, i secretsmanager.CreateSecretInput) error {
@@ -83,7 +104,7 @@ func putSecret(svc *secretsmanager.Client, i secretsmanager.CreateSecretInput) e
 		return err
 	}
 
-	log.Info().Msgf("Secret %s successfully updated", *i.Name)
+	log.Info().Msgf("Secret %s successfully (put-)updated", *i.Name)
 
 	return nil
 }
