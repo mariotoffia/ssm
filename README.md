@@ -144,7 +144,7 @@ if _, err := s.UnmarshalWithOpts(&ctx,
               support.NewFilters().
                       Exclude("Db").
                       Include("Db.ConnectString").
-                      Include("Db.Misc"), OnlyPms); err != nil  {
+                      Include("Db.Flow"), OnlyPms); err != nil  {
   panic()
 }
 
