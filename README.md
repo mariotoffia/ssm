@@ -10,7 +10,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout"`
   Db struct {
-    ConnectString string `pms:"connection, prefix=global/accountingdb"`
+    ConnectString string `asm:"connection, prefix=global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -32,10 +32,10 @@ fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout,
 The above example shows how to blend _PMS_ backed data with data set by the service itself to perform the work. Note that the `ConnectString` is a global setting and hence independant on the service it will be retrieved from _/{env}/global/accountingdb/connection_ parameter. In this way it is possible to constrain parameters to a single service, share between services or have notion of global parameters. Environment is *always* present, thus mandatory.
 
 The above example uses keys from 
-+ /eap/global/accountingdb/connection
-+ /eap/test-service/timeout
-+ /eap/test-service/db/batchsize
-+ /eap/test-service/db/timeout
++ /eap/global/accountingdb/connection (Secrets Manager)
++ /eap/test-service/timeout (Parameter Store)
++ /eap/test-service/db/batchsize (Parameter Store)
++ /eap/test-service/db/timeout (Parameter Store)
 
 # Standard Usage
 
@@ -46,7 +46,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -70,6 +70,8 @@ fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout,
 ```
 
 Note that plain `Unmarshal` will examine the structs for **both** _asm_ and _pms_ tags. If you want to control, and optimize speed and remote manager access, use `UnmarshalWithOpts` whey you may specify which tag types to use in the unmarshal operation.
+
+Since the `keyid=default` is specifies (if a write operation and key do not exists) that the account default CMK is used.
 
 ## AWS Secrets Manager
 In addition to Systems Manager, Parameter Store, this serializer can handle _asm_ tags that referes to the Secrets Manager instead. This is good if you e.g. have a shared secret for a RDS and wish to rotate the secret. For example, if we would use PMS for all configuration around how to handle the database and logic around it and then use the secrets manager for the actual connection string. It could look like this:
@@ -123,7 +125,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -189,7 +191,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
