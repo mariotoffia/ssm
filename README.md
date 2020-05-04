@@ -116,6 +116,17 @@ if _, err := s.UnmarshalWithOpts(&ctx, NoFilter, OnlyPms); err != nil  {
 
 The above will only unmarshal the parameter store data (by specifying `OnlyPms`) and **not** secrets manager `ConnectionString`. Hence it would be _""_. This can of course be achieved by _Filters_ (see below) but is a tiny bit optimization if you know that an entire remote store is not needed. In contrast, using filters you may selectively unmarshal values from both _asm_ and _pms_ (see filter below).
 
+### Versions
+Since AWS Secrets Manager handles versions in two ways and they are mutual exclusive, you only may specify one of the following _vs_, see [Version Stage](https://docs.aws.amazon.com/secretsmanager/latest/userguide/terms-concepts.html#term_staging-label), and _vid_ (Version Id). If none is specified the _AWSCURRENT_ staging label is used as _vs_ and hence the last version is retrieved.
+
+```go
+type AlwaysLatest struct {
+  ConnectString string `asm:connection, vs=AWSCURRENT"`
+}
+```
+The above example explicit states that this property will always be attached to lastest version since the Version Stage is always point to _AWSCURRENT_ stage label.
+
+
 ## Filters
 If you don't want all properties to be set (faster response-times) use a filter to include & exclude properties. Filters also work in the hiarchy, i.e. you may set a exclusion for on a field that do have nested sub-structs beneach
 and all of those will be automatically excluded. However, you may override that both on tree level or explicit on leaf (a specific field property that is *not* a sub-struct). For example
