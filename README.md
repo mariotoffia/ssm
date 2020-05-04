@@ -1,7 +1,7 @@
 # Introduction
 This library is intended to allow for encode / decode _go_ `struct` _fields_ from [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
 
-This library do not yet even have a 0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` operation, with PMS, partially or fully with reporting of which fields did not have any PMS counterpart.
+This library do not yet even have a 0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal _pms_ and _asm_ fields.
 
 The intention to this library to simplify fetching one or more parameters, secrets blended with other settings. It is also intended to be as efficient as possible and hence possible to filter, exclude or include, which properties that should participate in `Unmarshal` or `Marshal` operation. It uses go standard _Tag_ support to direct the `Serializer` how to `Marshal` or `Unmarshal` the data. For example
 
@@ -69,12 +69,56 @@ if err := env.set(&ctx); err != nil  {
 fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout, ctx.Db.ConnectString)
 ```
 
+Note that plain `Unmarshal` will examine the structs for **both** _asm_ and _pms_ tags. If you want to control, and optimize speed and remote manager access, use `UnmarshalWithOpts` whey you may specify which tag types to use in the unmarshal operation.
+
+## AWS Secrets Manager
+In addition to Systems Manager, Parameter Store, this serializer can handle _asm_ tags that referes to the Secrets Manager instead. This is good if you e.g. have a shared secret for a RDS and wish to rotate the secret. For example, if we would use PMS for all configuration around how to handle the database and logic around it and then use the secrets manager for the actual connection string. It could look like this:
+
+```go
+type MyContext struct {
+  Caller        string
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Db struct {
+    ConnectString string `asm:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
+    UpdateRevenue bool
+    Signer        string
+  }
+}
+
+var ctx MyContext
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+if _, err := s.Unmarshal(&ctx); err != nil  {
+  panic()
+}
+
+if err := env.set(&ctx); err != nil  {
+  panic()
+}
+// If we e.g. set the TOTAL_TIMEOUT = 99 in the env for the lambda 
+// the ctx.TotalTimeout will be 99 and hence overridden locally
+fmt.Printf("got total timeout of %d and connect using %s ...", ctx.TotalTimeout, ctx.Db.ConnectString)
+```
+
+Just a simple _pms_ to _asm_ tag substitution and now the connection string is managed in the secrets manager. Since `Unmarshal`, by default, unmarshals both _asm_ and _psm_ no changes in the unmarshal code is needed. 
+
+You may if you wish only access the secret or parameters using the unmarshal directives `OnlyPsm` or `OnlyAsm` in the `UnmarshalWithOpts` method. For example
+
+```go
+if _, err := s.UnmarshalWithOpts(&ctx, NoFilter, OnlyPms); err != nil  {
+  panic()
+}
+```
+
+The above will only unmarshal the parameter store data (by specifying `OnlyPms`) and **not** secrets manager `ConnectionString`. Hence it would be _""_. This can of course be achieved by _Filters_ (see below) but is a tiny bit optimization if you know that an entire remote store is not needed. In contrast, using filters you may selectively unmarshal values from both _asm_ and _pms_ (see filter below).
+
 ## Filters
 If you don't want all properties to be set (faster response-times) use a filter to include & exclude properties. Filters also work in the hiarchy, i.e. you may set a exclusion for on a field that do have nested sub-structs beneach
 and all of those will be automatically excluded. However, you may override that both on tree level or explicit on leaf (a specific field property that is *not* a sub-struct). For example
 
 ```go
-
 type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
@@ -94,11 +138,11 @@ type MyContext struct {
 var ctx MyContext
 
 s := ssm.NewSsmSerializer("eap", "test-service")
-if _, err := s.UnmarshalFilterd(&ctx,
+if _, err := s.UnmarshalWithOpts(&ctx,
               support.NewFilters().
                       Exclude("Db").
                       Include("Db.ConnectString").
-                      Include("Db.Misc")); err != nil  {
+                      Include("Db.Misc"), OnlyPms); err != nil  {
   panic()
 }
 
@@ -108,6 +152,8 @@ fmt.Printf("got total timeout of %d and connect using %s (base: %d, prime %d)",
 fmt.Printf("No data for BatchSize %d and DbTimeout %d", ctx.Db.BatchSize, ctx.Db.DbTimeout)
 ```
 The above sample will first _Exclude_ everything beneath the Db node. But since we have explicit (Leaf) and Node implicit Includes *beneath* the exclusion, those properties will be included. In this case `ConnectString`, everything beneatch `Flow` is included. However, everything else beneath `Db` is excluded, including `BatchSize` and `DbTimeout`.
+
+It also used the `OnlyPms` to illustrate that you may select what types of tags the unmarshaller shall use. In this case it is only a very scarse bit of optimization. However, if you would have _asm_ tags in this struct it would access the Secrets Manager if not filtered out.
 
 # Enhanced Usage
 
