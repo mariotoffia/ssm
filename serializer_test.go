@@ -68,6 +68,54 @@ func TestWihSingleNestedStructAsm(t *testing.T) {
 	assert.Equal(t, "test svc name", test.AsmSub.Nu2)
 }
 
+func TestWihSingleNestedStructPmsAndAsm(t *testing.T) {
+	var test testsupport.StructWithSubStruct
+
+	s := NewSsmSerializer("eap", "test-service")
+	_, err := s.UnmarshalWithOpts(&test, NoFilter, AllTags)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "The name", test.Name)
+	assert.Equal(t, 43, test.Sub.Apa)
+	assert.Equal(t, "test svc name", test.Sub.Nu)
+	assert.Equal(t, 43, test.AsmSub.Apa2)
+	assert.Equal(t, "test svc name", test.AsmSub.Nu2)
+}
+
+func TestWhenOnlyAsmEnabledPmsWillNotBePopulated(t *testing.T) {
+	var test testsupport.StructWithSubStruct
+
+	s := NewSsmSerializer("eap", "test-service")
+	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyAsm)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "", test.Name)
+	assert.Equal(t, 0, test.Sub.Apa)
+	assert.Equal(t, "", test.Sub.Nu)
+	assert.Equal(t, 43, test.AsmSub.Apa2)
+	assert.Equal(t, "test svc name", test.AsmSub.Nu2)
+}
+
+func TestWhenOnlyPmsEnabledAsmWillNotBePopulated(t *testing.T) {
+	var test testsupport.StructWithSubStruct
+
+	s := NewSsmSerializer("eap", "test-service")
+	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyAsm)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "", test.Name)
+	assert.Equal(t, 0, test.Sub.Apa)
+	assert.Equal(t, "", test.Sub.Nu)
+	assert.Equal(t, 43, test.AsmSub.Apa2)
+	assert.Equal(t, "test svc name", test.AsmSub.Nu2)
+}
+
 func TestWihSingleNestedStructFilteredPms(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
