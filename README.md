@@ -196,7 +196,7 @@ type MyContext struct {
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
     Signer        string
-    Missing       sing `pms:"missing-backing-field"`
+    Missing       string `pms:"missing-backing-field"`
   }
 }
 
