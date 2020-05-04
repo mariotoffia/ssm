@@ -55,10 +55,6 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 	m := map[string]*reflectparser.SsmNode{}
 	common.NodesToParameterMap(node, m, filter, tagparser.Asm)
 
-	for key, val := range m {
-		log.Info().Msgf("m[%s] = '%v'", key, *val)
-	}
-
 	mprms := map[string]*secretsmanager.GetSecretValueOutput{}
 	im := map[string]support.FullNameField{}
 
@@ -129,8 +125,6 @@ func (p *Serializer) getFromAws(prm string,
 	} else {
 		params = &secretsmanager.GetSecretValueInput{SecretId: aws.String(prm), VersionId: aws.String(nasm.VersionID())}
 	}
-
-	log.Debug().Str("svc", p.service).Msgf("Fetching %v", *params)
 
 	client := secretsmanager.New(p.config)
 	req := client.GetSecretValueRequest(params)

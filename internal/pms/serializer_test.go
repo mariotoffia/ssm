@@ -12,7 +12,7 @@ import (
 )
 
 func TestWihSingleStringStruct(t *testing.T) {
-	var test testsupport.SingleStringStruct
+	var test testsupport.SingleStringPmsStruct
 	tp := reflect.ValueOf(&test)
 	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
 	if err != nil {
@@ -30,7 +30,7 @@ func TestWihSingleStringStruct(t *testing.T) {
 	}
 
 	assert.Equal(t, "The name", test.Name)
-	res := node.Value().Interface().(testsupport.SingleStringStruct)
+	res := node.Value().Interface().(testsupport.SingleStringPmsStruct)
 	assert.Equal(t, "The name", res.Name)
 }
 

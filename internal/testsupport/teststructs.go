@@ -1,7 +1,7 @@
 package testsupport
 
-// SingleStringStruct with single string
-type SingleStringStruct struct {
+// SingleStringPmsStruct with single string
+type SingleStringPmsStruct struct {
 	Name string `pms:"test, prefix=simple,tag1=nanna banna panna"`
 }
 
@@ -23,9 +23,9 @@ type StructWithSubStruct struct {
 	}
 }
 
-// StructWithNonExistantVariable that has one var that is not
+// StructPmsWithNonExistantVariable that has one var that is not
 // backed in the PMS
-type StructWithNonExistantVariable struct {
+type StructPmsWithNonExistantVariable struct {
 	Name string `pms:"test, prefix=simple"`
 	Sub  struct {
 		Apa     int    `pms:"ext"`

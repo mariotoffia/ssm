@@ -9,7 +9,7 @@ import (
 )
 
 func TestSingleStringStruct(t *testing.T) {
-	var test testsupport.SingleStringStruct
+	var test testsupport.SingleStringPmsStruct
 	tp := reflect.ValueOf(&test)
 	node, err := New("eap", "test-service").Parse("", tp)
 	if err != nil {

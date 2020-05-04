@@ -10,10 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	testsupport.DefaultProvisionAsm()
-}
-
 func TestSingleStringAsmStruct(t *testing.T) {
 	var test testsupport.SingleStringAsmStruct
 	tp := reflect.ValueOf(&test)

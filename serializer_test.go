@@ -13,10 +13,12 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	testsupport.DefaultProvisionAsm()
 }
 
-func TestWihSingleStringStruct(t *testing.T) {
-	var test testsupport.SingleStringStruct
+func TestWihSingleStringStructPms(t *testing.T) {
+	var test testsupport.SingleStringPmsStruct
 
 	s := NewSsmSerializer("eap", "test-service")
 	_, err := s.Unmarshal(&test)
@@ -27,11 +29,11 @@ func TestWihSingleStringStruct(t *testing.T) {
 	assert.Equal(t, "The name", test.Name)
 }
 
-func TestWihSingleNestedStruct(t *testing.T) {
+func TestWihSingleNestedStructPms(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
 	s := NewSsmSerializer("eap", "test-service")
-	_, err := s.Unmarshal(&test)
+	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyPms)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -41,13 +43,13 @@ func TestWihSingleNestedStruct(t *testing.T) {
 	assert.Equal(t, "test svc name", test.Sub.Nu)
 }
 
-func TestWihSingleNestedStructFiltered(t *testing.T) {
+func TestWihSingleNestedStructFilteredPms(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
 	s := NewSsmSerializer("eap", "test-service")
-	_, err := s.UnmarshalFilterd(&test,
+	_, err := s.UnmarshalWithOpts(&test,
 		support.NewFilters().
-			Exclude("Sub.Apa"))
+			Exclude("Sub.Apa"), OnlyPms)
 
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -58,8 +60,8 @@ func TestWihSingleNestedStructFiltered(t *testing.T) {
 	assert.Equal(t, "test svc name", test.Sub.Nu)
 }
 
-func TestNonBackedVariableInStructReturnsAsMissingFullNameField(t *testing.T) {
-	var test testsupport.StructWithNonExistantVariable
+func TestNonBackedVariableInStructReturnsAsMissingFullNameFieldPms(t *testing.T) {
+	var test testsupport.StructPmsWithNonExistantVariable
 
 	s := NewSsmSerializer("eap", "test-service")
 	invalid, err := s.Unmarshal(&test)
