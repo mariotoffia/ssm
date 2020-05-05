@@ -15,6 +15,24 @@ const (
 	Asm
 )
 
+// ParamTier specifies the parameter tier such as std, adv, or intelligent.
+type ParamTier string
+
+const (
+	// Std is the standard tier that allows one accouint to store
+	// 10,000 parameters for free
+	Std ParamTier = "std"
+	// Adv allows for storage of up 8kb of data and uses different encryption algorithms
+	// This is not a free tier and cost will incur
+	Adv = "adv"
+	// Eval is trying to evaluates each request to determine if the parameter is standard
+	// or advanced. If the request doesn't include any options that require an advanced parameter,
+	// the parameter is created in the standard-parameter tier.
+	Eval = "eval"
+	// If this the default when noting is set and it will fall back on the set default in the serializer
+	Default = "default"
+)
+
 // SsmTag is used to encapsulate both PmsTag and AsmTag
 type SsmTag interface {
 	SsmType() StoreType
@@ -40,8 +58,37 @@ type PmsTag struct {
 	// keys (with the encoder / decoder) begins with local://
 	keyID string
 	// All key values that do not have a special meaning will end up as tags
+	// for the value
 	tags map[string]string
+	// An optional regular expression to validate the parameter value. E.g. for integer ^\d+$
+	pattern string
+	// An optional description describing the parameter.
+	description string
+	// If set to true (default) it will overwrite in a create operation - hence upsert
+	overwrite bool
+	// If not set it will use "std" (free) by default. Otherwise choose from adv(anced) or
+	// eval (Intelligent-Tiering)
+	tier ParamTier
 }
+
+// Tier specifies the parameter tier it may be of std, adv, and eval (intelligent tiering).
+// If nothing is specified Default is returned and it will use the serializer default tier.
+func (t *PmsTag) Tier() ParamTier {
+	if t.tier == "" {
+		return Default
+	}
+
+	return t.tier
+}
+
+// Overwrite returns true (default) if it will overwrite parameter upon write
+func (t *PmsTag) Overwrite() bool { return t.overwrite }
+
+// Pattern returns a optional regular expression to validate the parameter value.
+func (t *PmsTag) Pattern() string { return t.pattern }
+
+// Description returns a  description describing the parameter (if any).
+func (t *PmsTag) Description() string { return t.description }
 
 // SsmType returns Pms
 func (t *PmsTag) SsmType() StoreType { return Pms }
@@ -52,7 +99,7 @@ func (t *PmsTag) Prefix() string { return t.prefix }
 // Name returns the short name of the field
 func (t *PmsTag) Name() string { return t.name }
 
-// Tags is set when a standard field with a PmsTag
+// Tags is set of name values that is part of the Tags for the parameter
 func (t *PmsTag) Tags() map[string]string { return t.tags }
 
 // FullName is the full name including prefix
@@ -100,7 +147,9 @@ type AsmTag struct {
 	// attached to the version. If no versionStage or versionID is specified AWSCURRENT
 	// as versionStage is used
 	versionStage string
-	tags         map[string]string
+	// All key values that do not have a special meaning will end up as tags
+	// for the value
+	tags map[string]string
 }
 
 // SsmType returns Asm

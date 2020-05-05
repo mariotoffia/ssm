@@ -128,6 +128,21 @@ type AlwaysLatest struct {
 ```
 The above example explicit states that this property will always be attached to lastest version since the Version Stage is always point to _AWSCURRENT_ stage label.
 
+```go
+type AlwaysLatest struct {
+  ConnectString string `asm:connection, vs=AWSCURRENT"`
+}
+
+type AlwaysPrevious struct {
+  ConnectString string `asm:connection, vs=PREVIOUS"`
+}
+
+// Set and Marshal AlwaysLatest
+// Set and Marshal AlwaysLatest
+// Unmarshal AlwaysPrevious - will contain the previous value in ConnectString
+// Unmarshal AlwaysLatest - will contain the current value in ConnectString
+```
+
 
 ## Filters
 If you don't want all properties to be set (faster response-times) use a filter to include & exclude properties. Filters also work in the hiarchy, i.e. you may set a exclusion for on a field that do have nested sub-structs beneach

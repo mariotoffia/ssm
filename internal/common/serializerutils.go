@@ -28,7 +28,6 @@ func NodesToParameterMap(node *reflectparser.SsmNode,
 	} else {
 		if node.Tag().SsmType() == st {
 			if filter.IsIncluded(node.FqName()) {
-				log.Info().Msgf("ADDING %s = %v", node.Tag().FullName(), node)
 				paths[node.Tag().FullName()] = node
 				if node.Tag().Secure() {
 					issecure = true
@@ -74,4 +73,26 @@ func setStructIntValue(node *reflectparser.SsmNode, name string, value string) e
 	}
 	node.Value().SetInt(ival)
 	return nil
+}
+
+// GetStringValueFromField retrieves the value from the field and
+// converts it to a string
+func GetStringValueFromField(node *reflectparser.SsmNode) string {
+
+	switch node.Value().Kind() {
+	case reflect.String:
+		return node.Value().String()
+	case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int8:
+		return strconv.FormatInt(node.Value().Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(node.Value().Uint(), 10)
+	case reflect.Bool:
+		return strconv.FormatBool(node.Value().Bool())
+	case reflect.Float32:
+		return strconv.FormatFloat(node.Value().Float(), 'f', -1, 32)
+	case reflect.Float64:
+		return strconv.FormatFloat(node.Value().Float(), 'f', -1, 64)
+	}
+
+	return ""
 }

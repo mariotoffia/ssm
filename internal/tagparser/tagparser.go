@@ -2,6 +2,7 @@ package tagparser
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -62,7 +63,7 @@ func ParsePmsTagString(s string, prefix string, env string, svc string) (SsmTag,
 		return nil, errors.Errorf("tag string cannot be empty")
 	}
 
-	tag := PmsTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}}
+	tag := PmsTag{prefix: renderPrefix(prefix, env, svc), tags: map[string]string{}, overwrite: true}
 	commas := strings.Split(s, ",")
 	for _, kvs := range commas {
 		kv := strings.Split(kvs, "=")
@@ -88,6 +89,12 @@ func ParsePmsTagString(s string, prefix string, env string, svc string) (SsmTag,
 				tag.keyID = kv[1]
 			case "prefix":
 				tag.prefix = renderPrefix(kv[1], env, "")
+			case "description":
+				tag.description = kv[1]
+			case "pattern":
+				tag.pattern = kv[1]
+			case "overwrite":
+				tag.overwrite, _ = strconv.ParseBool(kv[1])
 			default:
 				tag.tags[kv[0]] = kv[1]
 			}

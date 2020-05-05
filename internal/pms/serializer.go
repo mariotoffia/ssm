@@ -2,6 +2,7 @@ package pms
 
 import (
 	"context"
+	"reflect"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -82,6 +83,126 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 	err = p.populate(node, prms)
 
 	return im, err
+}
+
+// Write stores the node values (after filter is applied). If any
+// error occurs it will return that in the support.FullNameField.Error
+// field. Thus it is possible to track which fields did not get written
+// to the Parameter store and hence needs to be handeled.
+func (p *Serializer) Write(node *reflectparser.SsmNode,
+	filter *support.FieldFilters) map[string]support.FullNameField {
+
+	m := map[string]*reflectparser.SsmNode{}
+	common.NodesToParameterMap(node, m, filter, tagparser.Pms)
+
+	im := map[string]support.FullNameField{}
+	if len(m) == 0 {
+		return im
+	}
+	params := p.toPutParameters(m)
+	client := ssm.New(p.config)
+
+	for _, prm := range params {
+		tags := prm.Tags
+		prm.Tags = nil
+
+		req := client.PutParameterRequest(&prm)
+		resp, err := req.Send(context.TODO())
+		if err != nil {
+			im[node.FqName()] = p.createFullNameFieldNode(*prm.Name, err, m[*prm.Name])
+			log.Debug().Str("svc", p.service).Msgf("Failed to write %v error: %v", im[node.FqName()], err)
+
+		} else {
+			log.Debug().Str("svc", p.service).Msgf("Succesfully wrote %v", resp)
+
+			if len(tags) > 0 {
+				req := client.AddTagsToResourceRequest(&ssm.AddTagsToResourceInput{
+					ResourceId:   prm.Name,
+					ResourceType: ssm.ResourceTypeForTaggingParameter,
+					Tags:         tags,
+				})
+
+				resp, err := req.Send(context.TODO())
+				if err != nil {
+					im[node.FqName()] = p.createFullNameFieldNode(*prm.Name, err, m[*prm.Name])
+					log.Debug().Str("svc", p.service).Msgf("Failed to write tags on %v error: %v", im[node.FqName()], err)
+
+				} else {
+					log.Debug().Str("svc", p.service).Msgf("Succesfully wrote tags %v", resp)
+				}
+			} else {
+				log.Debug().Str("svc", p.service).Msgf("No tags to add to %s - skipping", *prm.Name)
+			}
+		}
+
+	}
+
+	return im
+}
+
+func (p *Serializer) createFullNameFieldNode(remote string, err error,
+	node *reflectparser.SsmNode) support.FullNameField {
+	return support.FullNameField{
+		LocalName:  node.FqName(),
+		RemoteName: remote,
+		Field:      node.Field(),
+		Value:      node.Value(),
+		Error:      err}
+}
+
+func (p *Serializer) toPutParameters(prms map[string]*reflectparser.SsmNode) []ssm.PutParameterInput {
+
+	params := []ssm.PutParameterInput{}
+	for _, node := range prms {
+		if tag, ok := node.Tag().(*tagparser.PmsTag); ok {
+
+			params = append(params, ssm.PutParameterInput{Name: aws.String(node.Tag().FullName()),
+				Overwrite: aws.Bool(tag.Overwrite()),
+				Tier:      p.getTierFromTag(tag),
+				Tags:      getTagsFromTag(tag),
+				Type:      getParameterType(node),
+				Value:     aws.String(common.GetStringValueFromField(node)),
+			})
+
+		}
+	}
+
+	return params
+}
+func getParameterType(node *reflectparser.SsmNode) ssm.ParameterType {
+	if node.Tag().Secure() {
+		return ssm.ParameterTypeSecureString
+	}
+	if node.Value().Kind() == reflect.Slice {
+		return ssm.ParameterTypeStringList
+	}
+	return ssm.ParameterTypeString
+}
+
+func (p *Serializer) getTierFromTag(pmstag *tagparser.PmsTag) ssm.ParameterTier {
+
+	switch pmstag.Tier() {
+	case tagparser.Default:
+		return p.tier
+	case tagparser.Std:
+		return ssm.ParameterTierStandard
+	case tagparser.Adv:
+		return ssm.ParameterTierAdvanced
+	case tagparser.Eval:
+		return ssm.ParameterTierIntelligentTiering
+	}
+
+	return p.tier
+}
+
+func getTagsFromTag(pmstag *tagparser.PmsTag) []ssm.Tag {
+	tags := []ssm.Tag{}
+
+	for key, value := range pmstag.Tags() {
+		tags = append(tags, ssm.Tag{Key: aws.String(key), Value: aws.String(value)})
+	}
+
+	return tags
 }
 
 func (p *Serializer) handleInvalidRequestParameters(invalid []string,
