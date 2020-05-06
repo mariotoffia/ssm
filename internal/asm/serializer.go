@@ -76,7 +76,7 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 						}
 					}
 				} else {
-					log.Debug().Str("svc", p.service).Msgf("mprms[%s] = %v", n.FqName(), result)
+					log.Debug().Str("svc", p.service).Str("method", "Get").Msgf("field %s = got %s", n.FqName(), *result.SecretString)
 					mprms[n.FqName()] = result
 				}
 			} else {
@@ -108,7 +108,6 @@ func (p *Serializer) Upsert(node *reflectparser.SsmNode,
 
 		_, err := p.createAwsSecret(client, prm)
 		if err != nil {
-
 			_, err := p.updateAwsSecret(client, prm)
 			if err != nil {
 				im[node.FqName()] = support.FullNameField{LocalName: node.FqName(),
@@ -205,7 +204,7 @@ func (p *Serializer) getFromAws(prm string,
 
 	client := secretsmanager.New(p.config)
 	req := client.GetSecretValueRequest(params)
-	resp, err := req.Send(context.TODO())
+	resp, err := req.Send(context.Background())
 
 	if err != nil {
 		log.Debug().Msgf("error for '%s': %v err %v", prm, resp, err)
@@ -218,12 +217,16 @@ func (p *Serializer) createAwsSecret(client *secretsmanager.Client,
 	secret secretsmanager.CreateSecretInput) (*secretsmanager.CreateSecretOutput, error) {
 
 	req := client.CreateSecretRequest(&secret)
-	resp, err := req.Send(context.TODO())
+	resp, err := req.Send(context.Background())
 
 	if err != nil {
 		log.Debug().Msgf("create error for '%s': %v err %v", *secret.Name, resp, err)
 		return nil, err
 	}
+
+	log.Debug().Str("svc", p.service).Str("method", "createAwsSecret").
+		Msgf("created secret %s value %s", *secret.Name, *secret.SecretString)
+
 	return resp.CreateSecretOutput, nil
 
 }
@@ -238,11 +241,14 @@ func (p *Serializer) updateAwsSecret(client *secretsmanager.Client,
 		SecretId:           secret.Name,
 		SecretString:       secret.SecretString,
 	})
-	resp, err := req.Send(context.TODO())
+	resp, err := req.Send(context.Background())
 	if err != nil {
 		log.Debug().Msgf("update error for '%s': %v err %v", *secret.Name, resp, err)
 		return nil, err
 	}
+
+	log.Debug().Str("svc", p.service).Str("method", "updateAwsSecret").
+		Msgf("updated secret %s value %s", *secret.Name, *secret.SecretString)
 
 	return resp.UpdateSecretOutput, nil
 
@@ -255,11 +261,14 @@ func (p *Serializer) tagAwsSecret(client *secretsmanager.Client,
 		SecretId: secret.Name,
 		Tags:     secret.Tags,
 	})
-	resp, err := req.Send(context.TODO())
+	resp, err := req.Send(context.Background())
 	if err != nil {
 		log.Debug().Msgf("update tgs error for '%s': %v err %v", *secret.Name, resp, err)
 		return nil, err
 	}
+
+	log.Debug().Str("svc", p.service).Str("method", "tagAwsSecret").
+		Msgf("tagged secret %s tags %v", *secret.Name, secret.Tags)
 
 	return resp.TagResourceOutput, nil
 

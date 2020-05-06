@@ -75,10 +75,6 @@ func (p *ReflectionParser) parseStruct(nav string, parent *SsmNode, prefix strin
 			}
 			// Store tag for field
 			if tag != nil {
-				if e := log.Debug(); e.Enabled() {
-					e.Str("svc", p.service).Msgf("struct: '%s' field: '%s' parsed: '%+v' full Name: '%s'", t.Name(), renderFqName(nav, ft), tag, tag.FullName())
-				}
-
 				nodes = append(nodes, SsmNode{fqname: renderFqName(nav, ft), t: t, f: ft, v: fv, tag: tag, root: false, parent: parent})
 			}
 		}
