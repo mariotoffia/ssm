@@ -359,7 +359,7 @@ if len(err) > 0
 
 Again, this will **bluntly** _Marshal_ all parameters in struct. Since _ConnectionString_ is in the Secrets Manager it could possibly incur three invocations. If not already existant it will only use one create. But if already existant it tries to create, if fails it will update. If tags are present it will also invoke a tag resource. In above example, since missing tags, it will use one or two invocations. 
 
-_ - It's better to use filters :)_
+- It's better to use filters :)
 
 A neat thing is that you may define structs that are alike and read from one store and write to the other just by different decorations or overlaying decorations. For example if read from _JSON_ and copy to parameter store.
 ```go
