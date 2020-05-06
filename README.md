@@ -401,3 +401,97 @@ if len(err) > 0
   panic()
 }
 ```
+# Reporting
+It is possible to generate a report as object and JSON. This may be used in a _DevOps_ pipeline to e.g. use CDK to create Parameter Store & Secrets Manager entities to be provisioned using cloud formation. Hence it is possible to have
+default values by passing the struct as value instead of `nil` pointer with a specific `interface` type.
+
+For example, the following
+```go
+type StructWithSubStruct struct {
+	Name string `pms:"test, prefix=simple"`
+	Sub  struct {
+		Apa int    `pms:"ext"`
+		Nu  string `pms:"myname"`
+	}
+	AsmSub struct {
+		Apa2 int    `asm:"ext"`
+		Nu2  string `asm:"myname"`
+	}
+}
+
+set := testsupport.StructWithSubStruct{Name: "Thy name"}
+set.Sub.Apa = 44
+set.Sub.Nu = "hibby bibby"
+set.AsmSub.Apa2 = 444
+set.AsmSub.Nu2 = "ingen fantasi"
+
+s := NewSsmSerializer(stage, "test-service")
+objs, json, err := s.ReportWithOpts(&set, NoFilter, true)
+if err != nil {
+  panic(err)
+}
+```
+
+Renders a _JSON_ report on the following format:
+```json
+{
+  "parameters": [
+    {
+      "type": "parameter-store",
+      "fqname": "/unittest-39525d76/simple/test",
+      "keyid": "",
+      "description": "",
+      "tags": {},
+      "details": {
+        "pattern": "",
+        "tier": "Standard"
+      },
+      "value": "Thy name"
+    },
+    {
+      "type": "parameter-store",
+      "fqname": "/unittest-39525d76/test-service/sub/ext",
+      "keyid": "",
+      "description": "",
+      "tags": {},
+      "details": {
+        "pattern": "",
+        "tier": "Standard"
+      },
+      "value": "44"
+    },
+    {
+      "type": "parameter-store",
+      "fqname": "/unittest-39525d76/test-service/sub/myname",
+      "keyid": "",
+      "description": "",
+      "tags": {},
+      "details": {
+        "pattern": "",
+        "tier": "Standard"
+      },
+      "value": "hibby bibby"
+    },
+    {
+      "type": "secrets-manager",
+      "fqname": "/unittest-39525d76/test-service/asmsub/ext",
+      "keyid": "",
+      "description": "",
+      "tags": {},
+      "details": null,
+      "value": "444"
+    },
+    {
+      "type": "secrets-manager",
+      "fqname": "/unittest-39525d76/test-service/asmsub/myname",
+      "keyid": "",
+      "description": "",
+      "tags": {},
+      "details": null,
+      "value": "ingen fantasi"
+    }
+  ]
+}
+```
+
+However since it returns a `Report` object containing `Parameters` you may do your own _JSON_ or otherwise generation from the `Report` object. It is also possible to use _filter_ to filter out fields in same manner as `Marshal` and `Unmarshal` works.

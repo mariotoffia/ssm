@@ -39,6 +39,23 @@ func TestCleanAll(t *testing.T) {
 	testsupport.ListDeletePrms()
 }
 
+func TestReportNestedStructValues(t *testing.T) {
+	set := testsupport.StructWithSubStruct{Name: "Thy name"}
+	set.Sub.Apa = 44
+	set.Sub.Nu = "hibby bibby"
+	set.AsmSub.Apa2 = 444
+	set.AsmSub.Nu2 = "ingen fantasi"
+
+	s := NewSsmSerializer(stage, "test-service")
+	objs, json, err := s.ReportWithOpts(&set, NoFilter, true)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Contains(t, "bubbi", json)
+	assert.Equal(t, 5, len(objs.Parameters))
+}
+
 func TestUnmarshalWihSingleStringStructPms(t *testing.T) {
 	var test testsupport.SingleStringPmsStruct
 

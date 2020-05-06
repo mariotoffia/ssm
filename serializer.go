@@ -8,6 +8,7 @@ import (
 	"github.com/mariotoffia/ssm.git/internal/asm"
 	"github.com/mariotoffia/ssm.git/internal/pms"
 	"github.com/mariotoffia/ssm.git/internal/reflectparser"
+	"github.com/mariotoffia/ssm.git/report"
 	"github.com/mariotoffia/ssm.git/support"
 )
 
@@ -110,6 +111,35 @@ func (s *Serializer) Marshal(v interface{}) map[string]support.FullNameField {
 func (s *Serializer) MarshalWithOpts(v interface{},
 	filter *support.FieldFilters, usage []Usage) map[string]support.FullNameField {
 	return s.marshal(v, filter, usage)
+}
+
+// ReportWithOpts generates a struct based and JSON based report of the inparam type
+// or actual struct value to have default values generated.
+// The JSON report is on the following example format:
+// "parameters": [
+//	  {
+//		  "type": "secrets-manager",
+//		  "fqname": "/prod/simple/test",
+//		  "keyid": "",
+//		  "description": "A test secret",
+//		  "tags": {"test": "true"},
+//		  "details": null,
+//		  "value": "777"
+//	  }
+//  ]
+//}
+func (s *Serializer) ReportWithOpts(v interface{},
+	filter *support.FieldFilters,
+	values bool) (*report.Report, string, error) {
+
+	tp := reflect.ValueOf(v)
+	node, err := reflectparser.New(s.env, s.service).Parse("", tp)
+	if err != nil {
+		return nil, "", err
+	}
+
+	reporter := report.NewWithTier(s.tier)
+	return reporter.RenderReport(&node, filter, true)
 }
 
 func (s *Serializer) unmarshal(v interface{},
