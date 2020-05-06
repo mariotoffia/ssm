@@ -1,7 +1,7 @@
 # Introduction
 This library is intended to allow for encode / decode _go_ `struct` _fields_ from [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
 
-This library just in v0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` & `Marshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal / marshal _pms_ and _asm_ fields.
+This library in early stage  and hence in non production state. It basically now can do a plain `Unmarshal` & `Marshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal / marshal _pms_ and _asm_ fields.
 
 It is also possible to generate object, _JSON_ reports to e.g. use with [CDK](https://github.com/aws/aws-cdk) to that uses Cloud Formation to provision [parameters](https://github.com/aws/aws-cdk/tree/master/packages/%40aws-cdk/aws-ssm) and [secrets](https://github.com/aws/aws-cdk/tree/master/packages/%40aws-cdk/aws-secretsmanager). It is completely customizeable so you may integrate in your _DevOps_ pipeline.
 
