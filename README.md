@@ -1,11 +1,11 @@
 # Introduction
 This library is intended to allow for encode / decode _go_ `struct` _fields_ from [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
 
-This library do not yet even have a 0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal _pms_ and _asm_ fields.
+This library do not yet even have a 0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` & `Marshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal / marshal _pms_ and _asm_ fields.
 
 Only string value (**not binary**) for Secrets Manager is currently supported!
 
-The intention to this library to simplify fetching one or more parameters, secrets blended with other settings. It is also intended to be as efficient as possible and hence possible to filter, exclude or include, which properties that should participate in `Unmarshal` or `Marshal` operation. It uses go standard _Tag_ support to direct the `Serializer` how to `Marshal` or `Unmarshal` the data. For example
+The intention to this library to simplify fetching & upserting one or more parameters, secrets blended with other settings. It is also intended to be as efficient as possible and hence possible to filter, exclude or include, which properties that should participate in `Unmarshal` or `Marshal` operation. It uses go standard _Tag_ support to direct the `Serializer` how to `Marshal` or `Unmarshal` the data. For example
 
 ```go
 type MyContext struct {
@@ -185,8 +185,6 @@ The above sample will first _Exclude_ everything beneath the Db node. But since 
 
 It also used the `OnlyPms` to illustrate that you may select what types of tags the unmarshaller shall use. In this case it is only a very scarse bit of optimization. However, if you would have _asm_ tags in this struct it would access the Secrets Manager if not filtered out.
 
-# Enhanced Usage
-
 ## Taking Care of Not Backed Parameters
 If there was no backing parameter on e.g. Parameter Store, the `Unmarshal` methods will return as `map[string]support.FullNameField`. The map is keyed with the field navigation e.g. _Db.Flow.Base_ would refer to the
 ```go
@@ -243,3 +241,109 @@ for key, fld := range invalid {
 ```
 
 The above example will output ```Missing Db.Missing RemoteName /eap/test-service/db/missing-backing-field```.
+
+# Writing (Marshalling)
+It is possible to marshal using the structs towards the Parameter Store and Secrets Manager. To be smart and not update all parameters / secrets use filter to include and exclude struct fields to be marshalled. Note that writing to secrets manager and read back the values directly may return some secrets with the old values since it seems that it uses eventual consistency and hence a later point in time you get the new values.
+
+Marshalling is quite simple, just pass the pointer to the struct that you wish to marshal and it will iterate the fields and any sub-structs. The **error** mechanism is a little bit different. It will always only return the `support.FullNameField` (zero or more). If any geric error a **single** `support.FullNameField` is returned with the _Error_ property set to the error encountered. It has no _LocalName_ etc. set, just the _Error_ field. When it fails for some reason to write a field, it is returned as with `Unmarshal`. However, the _Error_ field is always set to the last exception encountered. This exception may not be the source since retries.
+
+Marshal is really a _Upsert_ operation where it tries to create, if already existant it will _Update_ the parameter. If update; it will then check if any tags are associated with the field and set those tags on the parameter / secret.
+
+```go
+type MyContext struct {
+  Caller        string
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Db struct {
+    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb"`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
+    UpdateRevenue bool
+    Signer        string
+    Missing       string `pms:"missing-backing-field"`
+  }
+}
+
+ctx := MyContext { Caller: "kalle", 
+// initalize the struct and substruct ...
+}
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+err := s.Marshal(&ctx)
+if len(err) > 0
+  panic()
+}
+```
+
+This above example marshals the **entire** struct and it's sub-struct field. Since Parameter Store do not have a batch mechanism the parameters are created / updated one by one. Hence this `Marshal` operation will call the parameter store 5 times (since no tags are present). Since the `ConnectString` is decorated with a _keyid_ it will be encrypted (in this case using the account default KMS key for parameter store).
+
+Therefore make sure to use _filter_ to narrow down the parameter that you really wanted to write!
+
+```go
+type MyContext struct {
+  Caller        string
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Db struct {
+    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb"`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
+    UpdateRevenue bool
+    Signer        string
+    Flow          struct {
+      Base  int `pms:"base"`
+      Prime int `pms:"prime"`
+    }
+  }
+}
+
+ctx := MyContext { Caller: "kalle", 
+// initalize the struct and substruct ...
+}
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+err := s.MarshalWithOpts(&ctx,
+          support.NewFilters().
+              Exclude("Db").
+              Include("Db.ConnectString").
+              Include("Db.Flow"), OnlyPms); err != nil  {
+
+if len(err) > 0 {
+  panic()
+}
+```
+The above example will only creater / update the parameter store with three parameters
++ ConnectString
++ Base
++ Prime
+
+Hence, only 3 invocations is done for this operation instead of six.
+
+It is also, as with `Unmarshal` blend _asm_ and _pms_ tags and the serializer will marshal towards parameter store or secrets manager respectively.
+
+```go
+type MyContext struct {
+  Caller        string
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
+  Db struct {
+    ConnectString string `asm:"connection, keyid=default, prefix=global/accountingdb"`
+    BatchSize     int `pms:"batchsize"`
+    DbTimeout     int `pms:"timeout"`
+    UpdateRevenue bool
+    Signer        string
+    Missing       string `pms:"missing-backing-field"`
+  }
+}
+
+ctx := MyContext { Caller: "kalle", 
+// initalize the struct and substruct ...
+}
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+err := s.Marshal(&ctx)
+if len(err) > 0
+  panic()
+}
+```
+
+Again, this will **bluntly** _Marshal_ all parameters in struct. Since _ConnectionString_ is in the Secrets Manager it could possibly incur three invocations. If not already existant it will only use one create. But if already existant it tries to create, if fails it will update. If tags are present it will also invoke a tag resource. In above example, since missing tags, it will use one or two invocations. 
+
+_ - It's better to use filters :)_
