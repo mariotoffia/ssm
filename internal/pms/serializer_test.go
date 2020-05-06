@@ -85,7 +85,7 @@ func TestMarshalWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	result := pmsr.Write(&node, support.NewFilters())
+	result := pmsr.Upsert(&node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, result)
 	}
@@ -122,7 +122,7 @@ func TestMarshalWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	result := pmsr.Write(&node, support.NewFilters())
+	result := pmsr.Upsert(&node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, result)
 	}

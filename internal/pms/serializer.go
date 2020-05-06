@@ -85,11 +85,11 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 	return im, err
 }
 
-// Write stores the node values (after filter is applied). If any
+// Upsert stores the node values (after filter is applied). If any
 // error occurs it will return that in the support.FullNameField.Error
 // field. Thus it is possible to track which fields did not get written
 // to the Parameter store and hence needs to be handeled.
-func (p *Serializer) Write(node *reflectparser.SsmNode,
+func (p *Serializer) Upsert(node *reflectparser.SsmNode,
 	filter *support.FieldFilters) map[string]support.FullNameField {
 
 	m := map[string]*reflectparser.SsmNode{}

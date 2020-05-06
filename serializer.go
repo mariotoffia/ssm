@@ -87,6 +87,31 @@ func (s *Serializer) UnmarshalWithOpts(v interface{},
 	return s.unmarshal(v, filter, usage)
 }
 
+// Marshal serializes the struct and sub-structs onto parameter store and AWS secrets
+// manager. The values are not checked, it will bluntly **upsert** the data onto the
+// remote storage. It returns a map containg fields that where tried to be set but for
+// some reason fails. The error property is aways filled in using Marshal (as opposed to
+// Unmarshal where it is never filled in). If any non field related error occurs an empty
+// support.FullNameField is returned with only the Error field populated.
+func (s *Serializer) Marshal(v interface{}) map[string]support.FullNameField {
+	return s.marshal(v, nil, nil)
+}
+
+// MarshalWithOpts serializes the struct and sub-structs onto parameter store and AWS secrets
+// manager. The values are not checked, it will bluntly **upsert** the data onto the
+// remote storage. It returns a map containg fields that where tried to be set but for
+// some reason fails. The error property is aways filled in using Marshal (as opposed to
+// Unmarshal where it is never filled in). If any non field related error occurs an empty
+// support.FullNameField is returned with only the Error field populated.
+//
+// In this version of Marshal it is possible to specify exactly which parameters to be
+// marshalled and which are not (see UnmarshalWithOpts for filter discussion). It is also
+// possible to explicitly enable / disable PMS or ASM and hence gain a little optimization.
+func (s *Serializer) MarshalWithOpts(v interface{},
+	filter *support.FieldFilters, usage []Usage) map[string]support.FullNameField {
+	return s.marshal(v, filter, usage)
+}
+
 func (s *Serializer) unmarshal(v interface{},
 	filter *support.FieldFilters, usage []Usage) (map[string]support.FullNameField, error) {
 
@@ -138,6 +163,59 @@ func (s *Serializer) unmarshal(v interface{},
 	}
 
 	return invalid, err
+}
+
+func (s *Serializer) marshal(v interface{},
+	filter *support.FieldFilters, usage []Usage) map[string]support.FullNameField {
+
+	if len(usage) == 0 {
+		if len(s.usage) > 0 {
+			usage = s.usage
+		} else {
+			usage = []Usage{UsePms, UseAsm}
+		}
+	}
+
+	if nil == filter {
+		filter = support.NewFilters()
+	}
+
+	tp := reflect.ValueOf(v)
+	node, err := reflectparser.New(s.env, s.service).Parse("", tp)
+
+	if err != nil {
+		return map[string]support.FullNameField{"": {Error: err}}
+	}
+
+	var invalid map[string]support.FullNameField
+
+	if _, found := find(usage, UsePms); found {
+		pmsr, err := s.getAndConfigurePms()
+		if err != nil {
+			return map[string]support.FullNameField{"": {Error: err}}
+		}
+
+		invalid = pmsr.Upsert(&node, filter)
+	}
+
+	if _, found := find(usage, UseAsm); found {
+		asmr, err := s.getAndConfigureAsm()
+		if err != nil {
+			return map[string]support.FullNameField{"": {Error: err}}
+		}
+
+		invalid2 := asmr.Upsert(&node, filter)
+		if invalid == nil && len(invalid2) > 0 {
+			invalid = map[string]support.FullNameField{}
+		}
+
+		// Merge field errors from ASM with PMS errors
+		for key, value := range invalid2 {
+			invalid[key] = value
+		}
+	}
+
+	return invalid
 }
 
 func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
