@@ -12,6 +12,8 @@ testverbose: testclean
 	@go test -v -cover ./...
 testclean:
 	@go clean -testcache
+testremoteclean:
+	@go test -v -run TestCleanAll -scope=clean
 dep:
 	@go get -v
 	@go mod graph

@@ -33,7 +33,7 @@ func provisionPms(prms []ssm.PutParameterInput) error {
 }
 
 // ListDeletePrms lists and deletes all parameters that begins with /unittest
-func listDeletePrms() error {
+func ListDeletePrms() error {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		return errors.Wrapf(err, "Failed to load AWS config")
@@ -82,7 +82,7 @@ func listDeletePrms() error {
 
 // DefaultProvisionPms sets up a defualt test environment for PMS
 func DefaultProvisionPms(stage string) error {
-	listDeletePrms()
+	ListDeletePrms()
 
 	return provisionPms([]ssm.PutParameterInput{
 		{Name: aws.String(fmt.Sprintf("/%s/simple/test", stage)), Type: ssm.ParameterTypeString,
