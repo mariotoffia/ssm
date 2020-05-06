@@ -147,7 +147,7 @@ type AlwaysLatest struct {
 }
 
 type AlwaysPrevious struct {
-  ConnectString string `asm:connection, vs=PREVIOUS"`
+  ConnectString string `asm:connection, vs=AWSPREVIOUS"`
 }
 
 // Set and Marshal AlwaysLatest
