@@ -55,10 +55,10 @@ func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 	svc := secretsmanager.New(awscfg)
 
 	for _, p := range prms {
-		log.Info().Msgf("Creating secret %s", *p.Name)
+		log.Info().Msgf("Creating asm-secret %s", *p.Name)
 		req := svc.CreateSecretRequest(&p)
 		if _, err := req.Send(context.Background()); err != nil {
-			log.Debug().Msgf("Failed to create secret %s", *p.Name)
+			log.Debug().Msgf("Failed to create asm-secret %s", *p.Name)
 			panic(err)
 		}
 	}
@@ -78,16 +78,18 @@ func DeleteAllUnittestSecrets() error {
 		req := svc.ListSecretsRequest(&inp)
 		resp, err := req.Send(context.Background())
 		if err != nil {
-			log.Warn().Msgf("Failed to list secrets %v", err)
+			log.Warn().Msgf("Failed to list asm-secrets %v", err)
 			break
 		}
+
 		if resp.NextToken == nil {
+			log.Debug().Msg("No more asm-secrets to delete (note that you may to delete them 30 minutes after creation to be found!")
 			break
 		}
 
 		inp.NextToken = resp.NextToken
 		for _, s := range resp.SecretList {
-			log.Debug().Msgf("Found secret %s", *s.Name)
+			log.Debug().Msgf("Found asm-secret %s", *s.Name)
 			if strings.HasPrefix(*s.Name, "/unittest-") {
 				internalDelete(secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
 					ForceDeleteWithoutRecovery: aws.Bool(true)})
@@ -98,14 +100,6 @@ func DeleteAllUnittestSecrets() error {
 	return nil
 }
 
-// DeleteAsm deletes secrets
-func DeleteAsm(prms []secretsmanager.CreateSecretInput) {
-	for _, p := range prms {
-		internalDelete(secretsmanager.DeleteSecretInput{SecretId: aws.String(*p.Name),
-			ForceDeleteWithoutRecovery: aws.Bool(true)})
-	}
-}
-
 func internalDelete(prms secretsmanager.DeleteSecretInput) error {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
@@ -114,7 +108,7 @@ func internalDelete(prms secretsmanager.DeleteSecretInput) error {
 
 	svc := secretsmanager.New(awscfg)
 
-	fmt.Printf("deleting %v", prms)
+	fmt.Printf("deleting-asm %v", prms)
 	req := svc.DeleteSecretRequest(&prms)
 	if _, err := req.Send(context.Background()); err != nil {
 		if aerr, ok := err.(awserr.Error); ok {

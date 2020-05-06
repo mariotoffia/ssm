@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/mariotoffia/ssm.git/internal/testsupport"
 	"github.com/mariotoffia/ssm.git/support"
@@ -16,13 +15,18 @@ var stage string
 var scope string
 
 func init() {
+	testing.Init() // Need to do this in order for flag.Parse() to work
 	flag.StringVar(&scope, "scope", "", "Scope for test")
-	stage = testsupport.DefaultProvisionAsm()
-	log.Info().Msgf("Initializing main serializer unittest with STAGE: %s", stage)
+	flag.Parse()
 
-	err := testsupport.DefaultProvisionPms(stage)
-	if err != nil {
-		panic(err)
+	if scope != "clean" {
+		stage = testsupport.DefaultProvisionAsm()
+		log.Info().Msgf("Initializing main serializer unittest with STAGE: %s", stage)
+
+		err := testsupport.DefaultProvisionPms(stage)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -31,8 +35,6 @@ func TestCleanAll(t *testing.T) {
 		t.Skip("Only run when explicit run with parameter clean")
 	}
 
-	log.Debug().Msgf("Waiting 10 seconds for PMS and ASM to return all variables")
-	time.Sleep(10 * time.Second)
 	testsupport.DeleteAllUnittestSecrets()
 	testsupport.ListDeletePrms()
 }

@@ -27,7 +27,7 @@ func provisionPms(prms []ssm.PutParameterInput) error {
 			return err
 		}
 
-		log.Debug().Msgf("Wrote name: %s value: %s got version %d", *p.Name, *p.Value, *resp.Version)
+		log.Debug().Msgf("Wrote pms-name: %s value: %s got version %d", *p.Name, *p.Value, *resp.Version)
 	}
 	return nil
 }
@@ -39,7 +39,6 @@ func ListDeletePrms() error {
 		return errors.Wrapf(err, "Failed to load AWS config")
 	}
 
-	log.Debug().Msgf("region %s", awscfg.Region)
 	client := ssm.New(awscfg)
 
 	inp := ssm.DescribeParametersInput{
@@ -59,15 +58,19 @@ func ListDeletePrms() error {
 
 		dprm := ssm.DeleteParametersInput{}
 		for _, prm := range res.Parameters {
-			log.Debug().Msgf("Deleting param name: %s version %d", *prm.Name, *prm.Version)
+			log.Debug().Msgf("Deleting pms-param name: %s version %d", *prm.Name, *prm.Version)
 			dprm.Names = append(dprm.Names, *prm.Name)
 		}
 
-		dreq := client.DeleteParametersRequest(&dprm)
-		_, err = dreq.Send(context.Background())
-		if err != nil {
-			log.Warn().Msgf("got error when deleting params error: %v", err)
-			return err
+		if len(dprm.Names) > 0 {
+			dreq := client.DeleteParametersRequest(&dprm)
+			_, err = dreq.Send(context.Background())
+			if err != nil {
+				log.Warn().Msgf("got error when deleting params error: %v", err)
+				return err
+			}
+		} else {
+			log.Debug().Msgf("No pms-parameters to delete")
 		}
 
 		if res.NextToken == nil {
