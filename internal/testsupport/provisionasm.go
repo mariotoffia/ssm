@@ -3,6 +3,7 @@ package testsupport
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
@@ -20,29 +21,28 @@ import (
 // this function will check if exist, if so update the value, if
 // missing it will create the secret. It will not delete the
 // secrets by default.
-func DefaultProvisionAsm() {
-	ProvisionAsm(Secrets())
+func DefaultProvisionAsm() string {
+	stage := UnittestStage()
+	DeleteAllUnittestSecrets()
+	ProvisionAsm(Secrets(stage))
+
+	return stage
 }
 
 // Secrets generates all secrets managed by the test system
-func Secrets() []secretsmanager.CreateSecretInput {
+func Secrets(stage string) []secretsmanager.CreateSecretInput {
 	return []secretsmanager.CreateSecretInput{
-		{Name: aws.String("/eap/simple/test"),
+		{Name: aws.String(fmt.Sprintf("/%s/simple/test", stage)),
 			SecretString:       aws.String("The name"),
 			ClientRequestToken: aws.String(uuid.New().String())},
-		{Name: aws.String("/eap/test-service/asmsub/ext"),
+		{Name: aws.String(fmt.Sprintf("/%s/test-service/asmsub/ext", stage)),
 			SecretString:       aws.String("43"),
 			ClientRequestToken: aws.String(uuid.New().String())},
-		{Name: aws.String("/eap/test-service/asmsub/myname"),
+		{Name: aws.String(fmt.Sprintf("/%s/test-service/asmsub/myname", stage)),
 			SecretString:       aws.String("test svc name"),
 			ClientRequestToken: aws.String(uuid.New().String())},
 	}
-
-	// if any changes, let the value settle
-	// time.Sleep(1000 * time.Millisecond)
 }
-
-var delete = false
 
 // ProvisionAsm provision secrets
 func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
@@ -58,53 +58,42 @@ func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 		log.Info().Msgf("Creating secret %s", *p.Name)
 		req := svc.CreateSecretRequest(&p)
 		if _, err := req.Send(context.Background()); err != nil {
-			log.Debug().Msgf("Failed to create secret %s, checking if PUT works", *p.Name)
+			log.Debug().Msgf("Failed to create secret %s", *p.Name)
+			panic(err)
+		}
+	}
+}
 
-			if e := updateSecret(svc, p); e != nil {
-				log.Warn().Msgf("error when create secret %v", err)
+// DeleteAllUnittestSecrets tries to delete all unit test secrets
+func DeleteAllUnittestSecrets() error {
+	inp := secretsmanager.ListSecretsInput{}
+
+	awscfg, err := external.LoadDefaultAWSConfig()
+	if err != nil {
+		return errors.Wrapf(err, "Failed to load AWS config")
+	}
+
+	svc := secretsmanager.New(awscfg)
+	for {
+		req := svc.ListSecretsRequest(&inp)
+		resp, err := req.Send(context.Background())
+		if err != nil {
+			log.Warn().Msgf("Failed to list secrets %v", err)
+			break
+		}
+		if resp.NextToken == nil {
+			break
+		}
+
+		inp.NextToken = resp.NextToken
+		for _, s := range resp.SecretList {
+			log.Debug().Msgf("Found secret %s", *s.Name)
+			if strings.HasPrefix(*s.Name, "/unittest-") {
+				internalDelete(secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
+					ForceDeleteWithoutRecovery: aws.Bool(true)})
 			}
 		}
 	}
-}
-
-func updateSecret(svc *secretsmanager.Client, i secretsmanager.CreateSecretInput) error {
-
-	req := svc.UpdateSecretRequest(&secretsmanager.UpdateSecretInput{
-		ClientRequestToken: i.ClientRequestToken,
-		SecretId:           i.Name,
-		SecretString:       i.SecretString,
-	})
-
-	if _, err := req.Send(context.Background()); err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			log.Warn().Msgf("Failed to update secret %s - error: %v", *i.Name, aerr.Error())
-		}
-
-		return err
-	}
-
-	log.Info().Msgf("Secret %s successfully updated", *i.Name)
-
-	return nil
-}
-
-func putSecret(svc *secretsmanager.Client, i secretsmanager.CreateSecretInput) error {
-
-	req := svc.PutSecretValueRequest(&secretsmanager.PutSecretValueInput{
-		ClientRequestToken: i.ClientRequestToken,
-		SecretId:           i.Name,
-		SecretString:       i.SecretString,
-	})
-
-	if _, err := req.Send(context.Background()); err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			log.Warn().Msgf("Failed to put secret %s - error: %v", *i.Name, aerr.Error())
-		}
-
-		return err
-	}
-
-	log.Info().Msgf("Secret %s successfully (put-)updated", *i.Name)
 
 	return nil
 }

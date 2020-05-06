@@ -29,7 +29,7 @@ const (
 	// or advanced. If the request doesn't include any options that require an advanced parameter,
 	// the parameter is created in the standard-parameter tier.
 	Eval = "eval"
-	// If this the default when noting is set and it will fall back on the set default in the serializer
+	// Default is the default when noting is set and it will fall back on the set default in the serializer
 	Default = "default"
 )
 
@@ -41,6 +41,10 @@ type SsmTag interface {
 	Tags() map[string]string
 	FullName() string
 	Secure() bool
+	Description() string
+	DefaultAccountKey() bool
+	IsLocalKey() bool
+	GetKeyName() string
 }
 
 // PmsTag is for AWS parameter store
@@ -114,7 +118,7 @@ func (t *PmsTag) DefaultAccountKey() bool { return t.keyID == "default" }
 // IsLocalKey returns true if the real arn to the key is registered in the encoder / decoder
 func (t *PmsTag) IsLocalKey() bool { return strings.HasPrefix(t.keyID, "local://") }
 
-// GetKeyName gets the keyname without namespaces for local, full for arn and default-account
+// GetKeyName gets the keyname without namespaces for local, full for arn and default
 // for such
 func (t *PmsTag) GetKeyName() string {
 	if t.IsLocalKey() {
@@ -150,7 +154,12 @@ type AsmTag struct {
 	// All key values that do not have a special meaning will end up as tags
 	// for the value
 	tags map[string]string
+	// The description for this secret (if any)
+	description string
 }
+
+// Description returns the description for this secret (if any)
+func (t *AsmTag) Description() string { return t.description }
 
 // SsmType returns Asm
 func (t *AsmTag) SsmType() StoreType { return Asm }
@@ -184,7 +193,7 @@ func (t *AsmTag) DefaultAccountKey() bool { return t.keyID == "default" }
 // IsLocalKey returns true if the real arn to the key is registered in the encoder / decoder
 func (t *AsmTag) IsLocalKey() bool { return strings.HasPrefix(t.keyID, "local://") }
 
-// GetKeyName gets the keyname without namespaces for local, full for arn and default-account
+// GetKeyName gets the keyname without namespaces for local, full for arn and default
 // for such
 func (t *AsmTag) GetKeyName() string {
 	if t.IsLocalKey() {

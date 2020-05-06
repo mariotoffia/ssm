@@ -1,26 +1,31 @@
 package ssm
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/mariotoffia/ssm.git/internal/testsupport"
 	"github.com/mariotoffia/ssm.git/support"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
+var stage string
+
 func init() {
-	err := testsupport.DefaultProvisionPms()
+	stage = testsupport.DefaultProvisionAsm()
+	log.Info().Msgf("Initializing main serializer unittest with STAGE: %s", stage)
+
+	err := testsupport.DefaultProvisionPms(stage)
 	if err != nil {
 		panic(err)
 	}
-
-	testsupport.DefaultProvisionAsm()
 }
 
 func TestWihSingleStringStructPms(t *testing.T) {
 	var test testsupport.SingleStringPmsStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.Unmarshal(&test)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -32,7 +37,7 @@ func TestWihSingleStringStructPms(t *testing.T) {
 func TestWihSingleStringStructAsm(t *testing.T) {
 	var test testsupport.SingleStringAsmStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.Unmarshal(&test)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -44,7 +49,7 @@ func TestWihSingleStringStructAsm(t *testing.T) {
 func TestWihSingleNestedStructPms(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyPms)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -58,7 +63,7 @@ func TestWihSingleNestedStructPms(t *testing.T) {
 func TestWihSingleNestedStructAsm(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyAsm)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -71,7 +76,7 @@ func TestWihSingleNestedStructAsm(t *testing.T) {
 func TestWihSingleNestedStructPmsAndAsm(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test, NoFilter, AllTags)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -87,7 +92,7 @@ func TestWihSingleNestedStructPmsAndAsm(t *testing.T) {
 func TestWhenOnlyAsmEnabledPmsWillNotBePopulated(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyAsm)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -103,7 +108,7 @@ func TestWhenOnlyAsmEnabledPmsWillNotBePopulated(t *testing.T) {
 func TestWhenOnlyPmsEnabledAsmWillNotBePopulated(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyAsm)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -119,7 +124,7 @@ func TestWhenOnlyPmsEnabledAsmWillNotBePopulated(t *testing.T) {
 func TestWihSingleNestedStructFilteredPms(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test,
 		support.NewFilters().
 			Exclude("Sub.Apa"), OnlyPms)
@@ -136,7 +141,7 @@ func TestWihSingleNestedStructFilteredPms(t *testing.T) {
 func TestWihSingleNestedStructFilteredAsm(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	_, err := s.UnmarshalWithOpts(&test,
 		support.NewFilters().
 			Exclude("AsmSub.Apa2"), OnlyAsm)
@@ -152,7 +157,7 @@ func TestWihSingleNestedStructFilteredAsm(t *testing.T) {
 func TestNonBackedVariableInStructReturnsAsMissingFullNameFieldPms(t *testing.T) {
 	var test testsupport.StructPmsWithNonExistantVariable
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	invalid, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyPms)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -164,13 +169,13 @@ func TestNonBackedVariableInStructReturnsAsMissingFullNameFieldPms(t *testing.T)
 	assert.Equal(t, "", test.Sub.Missing)
 	assert.Equal(t, 1, len(invalid))
 	assert.Equal(t, "Sub.Missing", invalid["Sub.Missing"].LocalName)
-	assert.Equal(t, "/eap/test-service/sub/gonemissing", invalid["Sub.Missing"].RemoteName)
+	assert.Equal(t, fmt.Sprintf("/%s/test-service/sub/gonemissing", stage), invalid["Sub.Missing"].RemoteName)
 }
 
 func TestNonBackedVariableInStructReturnsAsMissingFullNameFieldAsm(t *testing.T) {
 	var test testsupport.StructPmsWithNonExistantVariable
 
-	s := NewSsmSerializer("eap", "test-service")
+	s := NewSsmSerializer(stage, "test-service")
 	invalid, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyAsm)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -181,5 +186,5 @@ func TestNonBackedVariableInStructReturnsAsMissingFullNameFieldAsm(t *testing.T)
 	assert.Equal(t, "", test.AsmSub.Missing2)
 	assert.Equal(t, 1, len(invalid))
 	assert.Equal(t, "AsmSub.Missing2", invalid["AsmSub.Missing2"].LocalName)
-	assert.Equal(t, "/eap/test-service/asmsub/gonemissing", invalid["AsmSub.Missing2"].RemoteName)
+	assert.Equal(t, fmt.Sprintf("/%s/test-service/asmsub/gonemissing", stage), invalid["AsmSub.Missing2"].RemoteName)
 }

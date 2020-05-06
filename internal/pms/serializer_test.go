@@ -11,10 +11,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var stage string
+
+func init() {
+	stage = testsupport.UnittestStage()
+	log.Info().Msgf("Initializing PMS unittest with STAGE: %s", stage)
+
+	err := testsupport.DefaultProvisionPms(stage)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestUnmarshalWihSingleStringStruct(t *testing.T) {
 	var test testsupport.SingleStringPmsStruct
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
+	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -37,7 +49,7 @@ func TestUnmarshalWihSingleStringStruct(t *testing.T) {
 func TestUnmarshalWihSingleNestedStruct(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
+	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -63,7 +75,7 @@ func TestUnmarshalWihSingleNestedStruct(t *testing.T) {
 func TestMarshalWihSingleStringStruct(t *testing.T) {
 	test := testsupport.SingleStringPmsStruct{Name: "my-custom name"}
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
+	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -80,7 +92,7 @@ func TestMarshalWihSingleStringStruct(t *testing.T) {
 
 	var tr testsupport.SingleStringPmsStruct
 	tp = reflect.ValueOf(&tr)
-	node, err = reflectparser.New("eap", "test-service").Parse("", tp)
+	node, err = reflectparser.New(stage, "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -100,7 +112,7 @@ func TestMarshalWihSingleNestedStruct(t *testing.T) {
 	test.Sub.Nu = "krafso blafso"
 
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New("eap", "test-service").Parse("", tp)
+	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -118,7 +130,7 @@ func TestMarshalWihSingleNestedStruct(t *testing.T) {
 	// Read it back
 	var tr testsupport.StructWithSubStruct
 	tp = reflect.ValueOf(&tr)
-	node, err = reflectparser.New("eap", "test-service").Parse("", tp)
+	node, err = reflectparser.New(stage, "test-service").Parse("", tp)
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

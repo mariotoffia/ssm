@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/google/uuid"
 	"github.com/mariotoffia/ssm.git/internal/common"
 	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/tagparser"
@@ -89,6 +90,82 @@ func (p *Serializer) Get(node *reflectparser.SsmNode,
 	return im, nil
 }
 
+// Upsert creates or updates a secret.
+func (p *Serializer) Upsert(node *reflectparser.SsmNode,
+	filter *support.FieldFilters) map[string]support.FullNameField {
+
+	m := map[string]*reflectparser.SsmNode{}
+	common.NodesToParameterMap(node, m, filter, tagparser.Asm)
+
+	// TODO: Implement me!
+	im := map[string]support.FullNameField{}
+
+	client := secretsmanager.New(p.config)
+	params := genCreateSecretParams(m)
+
+	for _, prm := range params {
+		node := m[*prm.Name]
+
+		_, err := p.createAwsSecret(client, prm)
+		if err != nil {
+
+			_, err := p.updateAwsSecret(client, prm)
+			if err != nil {
+				im[node.FqName()] = support.FullNameField{LocalName: node.FqName(),
+					RemoteName: *prm.Name, Error: err, Field: node.Field(), Value: node.Value()}
+			} else {
+
+				if len(prm.Tags) > 0 {
+
+					_, err = p.tagAwsSecret(client, prm)
+					if err != nil {
+						im[node.FqName()] = support.FullNameField{LocalName: node.FqName(),
+							RemoteName: *prm.Name, Error: err, Field: node.Field(), Value: node.Value()}
+					}
+				}
+			}
+		}
+	}
+
+	return im
+}
+
+func genCreateSecretParams(nodes map[string]*reflectparser.SsmNode) []secretsmanager.CreateSecretInput {
+
+	prms := []secretsmanager.CreateSecretInput{}
+	for _, node := range nodes {
+		prms = append(prms, genCreateSecretParam(node))
+	}
+
+	return prms
+}
+
+func genCreateSecretParam(node *reflectparser.SsmNode) secretsmanager.CreateSecretInput {
+	var keyid *string = nil
+	var tags []secretsmanager.Tag = nil
+
+	if !node.Tag().DefaultAccountKey() {
+		keyid = aws.String(node.Tag().GetKeyName())
+	}
+
+	t := node.Tag().Tags()
+	if len(t) > 0 {
+		tags = []secretsmanager.Tag{}
+		for key := range t {
+			tags = append(tags, secretsmanager.Tag{Key: aws.String(key), Value: aws.String(t[key])})
+		}
+	}
+
+	return secretsmanager.CreateSecretInput{
+		ClientRequestToken: aws.String(uuid.New().String()),
+		Name:               aws.String(node.Tag().FullName()),
+		Description:        aws.String(node.Tag().Description()),
+		KmsKeyId:           keyid,
+		SecretString:       aws.String(common.GetStringValueFromField(node)),
+		Tags:               tags,
+	}
+}
+
 func populate(node *reflectparser.SsmNode, params map[string]*secretsmanager.GetSecretValueOutput) {
 	node.EnsureInstance(false)
 
@@ -135,4 +212,55 @@ func (p *Serializer) getFromAws(prm string,
 		return nil, err
 	}
 	return resp.GetSecretValueOutput, nil
+}
+
+func (p *Serializer) createAwsSecret(client *secretsmanager.Client,
+	secret secretsmanager.CreateSecretInput) (*secretsmanager.CreateSecretOutput, error) {
+
+	req := client.CreateSecretRequest(&secret)
+	resp, err := req.Send(context.TODO())
+
+	if err != nil {
+		log.Debug().Msgf("create error for '%s': %v err %v", *secret.Name, resp, err)
+		return nil, err
+	}
+	return resp.CreateSecretOutput, nil
+
+}
+
+func (p *Serializer) updateAwsSecret(client *secretsmanager.Client,
+	secret secretsmanager.CreateSecretInput) (*secretsmanager.UpdateSecretOutput, error) {
+
+	req := client.UpdateSecretRequest(&secretsmanager.UpdateSecretInput{
+		ClientRequestToken: secret.ClientRequestToken,
+		Description:        secret.Description,
+		KmsKeyId:           secret.KmsKeyId,
+		SecretId:           secret.Name,
+		SecretString:       secret.SecretString,
+	})
+	resp, err := req.Send(context.TODO())
+	if err != nil {
+		log.Debug().Msgf("update error for '%s': %v err %v", *secret.Name, resp, err)
+		return nil, err
+	}
+
+	return resp.UpdateSecretOutput, nil
+
+}
+
+func (p *Serializer) tagAwsSecret(client *secretsmanager.Client,
+	secret secretsmanager.CreateSecretInput) (*secretsmanager.TagResourceOutput, error) {
+
+	req := client.TagResourceRequest(&secretsmanager.TagResourceInput{
+		SecretId: secret.Name,
+		Tags:     secret.Tags,
+	})
+	resp, err := req.Send(context.TODO())
+	if err != nil {
+		log.Debug().Msgf("update tgs error for '%s': %v err %v", *secret.Name, resp, err)
+		return nil, err
+	}
+
+	return resp.TagResourceOutput, nil
+
 }

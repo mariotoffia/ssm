@@ -2,6 +2,7 @@ package testsupport
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/external"
@@ -12,29 +13,16 @@ import (
 
 // ProvisionPms will provision all parameters.
 // If already existant, it will just be overwritten.
-func ProvisionPms(prms []ssm.PutParameterInput) error {
+func provisionPms(prms []ssm.PutParameterInput) error {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		return errors.Wrapf(err, "Failed to load AWS config")
 	}
 
-	delete := ssm.DeleteParametersInput{}
-	for _, p := range prms {
-		if nil != p.Overwrite && *p.Overwrite {
-			delete.Names = append(delete.Names, *p.Name)
-		}
-	}
-
-	if len(delete.Names) > 0 {
-		if err := DeletePms(delete); err != nil {
-			return err
-		}
-	}
-
 	client := ssm.New(awscfg)
 	for _, p := range prms {
 		req := client.PutParameterRequest(&p)
-		resp, err := req.Send(context.TODO())
+		resp, err := req.Send(context.Background())
 		if err != nil {
 			return err
 		}
@@ -44,31 +32,63 @@ func ProvisionPms(prms []ssm.PutParameterInput) error {
 	return nil
 }
 
-// DeletePms removes a set of Parameter Store Parameters
-func DeletePms(prms ssm.DeleteParametersInput) error {
+// ListDeletePrms lists and deletes all parameters that begins with /unittest
+func listDeletePrms() error {
 	awscfg, err := external.LoadDefaultAWSConfig()
 	if err != nil {
 		return errors.Wrapf(err, "Failed to load AWS config")
 	}
 
+	log.Debug().Msgf("region %s", awscfg.Region)
 	client := ssm.New(awscfg)
-	req := client.DeleteParametersRequest(&prms)
-	resp, err := req.Send(context.TODO())
-	if err != nil {
-		return err
+
+	inp := ssm.DescribeParametersInput{
+		ParameterFilters: []ssm.ParameterStringFilter{{
+			Key:    aws.String("Name"),
+			Option: aws.String("BeginsWith"),
+			Values: []string{"/unittest-"},
+		}}}
+
+	for {
+		req := client.DescribeParametersRequest(&inp)
+		res, err := req.Send(context.Background())
+		if err != nil {
+			log.Warn().Msgf("got error when listing params for deletion error: %v", err)
+			return err
+		}
+
+		dprm := ssm.DeleteParametersInput{}
+		for _, prm := range res.Parameters {
+			log.Debug().Msgf("Deleting param name: %s version %d", *prm.Name, *prm.Version)
+			dprm.Names = append(dprm.Names, *prm.Name)
+		}
+
+		dreq := client.DeleteParametersRequest(&dprm)
+		_, err = dreq.Send(context.Background())
+		if err != nil {
+			log.Warn().Msgf("got error when deleting params error: %v", err)
+			return err
+		}
+
+		if res.NextToken == nil {
+			break
+		}
+
+		inp.NextToken = res.NextToken
 	}
 
-	log.Debug().Msgf("deleted: %s invalid: %s", resp.DeletedParameters, resp.InvalidParameters)
 	return nil
 }
 
 // DefaultProvisionPms sets up a defualt test environment for PMS
-func DefaultProvisionPms() error {
-	return ProvisionPms([]ssm.PutParameterInput{
-		{Name: aws.String("/eap/simple/test"), Type: ssm.ParameterTypeString,
+func DefaultProvisionPms(stage string) error {
+	listDeletePrms()
+
+	return provisionPms([]ssm.PutParameterInput{
+		{Name: aws.String(fmt.Sprintf("/%s/simple/test", stage)), Type: ssm.ParameterTypeString,
 			Overwrite: aws.Bool(true), Value: aws.String("The name")},
-		{Name: aws.String("/eap/test-service/sub/ext"), Type: ssm.ParameterTypeString,
+		{Name: aws.String(fmt.Sprintf("/%s/test-service/sub/ext", stage)), Type: ssm.ParameterTypeString,
 			Overwrite: aws.Bool(true), Value: aws.String("43")},
-		{Name: aws.String("/eap/test-service/sub/myname"), Type: ssm.ParameterTypeString,
+		{Name: aws.String(fmt.Sprintf("/%s/test-service/sub/myname", stage)), Type: ssm.ParameterTypeString,
 			Overwrite: aws.Bool(true), Value: aws.String("test svc name")}})
 }
