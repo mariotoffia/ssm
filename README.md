@@ -360,3 +360,41 @@ if len(err) > 0
 Again, this will **bluntly** _Marshal_ all parameters in struct. Since _ConnectionString_ is in the Secrets Manager it could possibly incur three invocations. If not already existant it will only use one create. But if already existant it tries to create, if fails it will update. If tags are present it will also invoke a tag resource. In above example, since missing tags, it will use one or two invocations. 
 
 _ - It's better to use filters :)_
+
+A neat thing is that you may define structs that are alike and read from one store and write to the other just by different decorations or overlaying decorations. For example if read from _JSON_ and copy to parameter store.
+```go
+type MyContext struct {
+  TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT", json:"timeout"`
+  Db struct {
+    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", json:"connectstring"`
+    BatchSize     int `pms:"batchsize", json:"batch"`
+    DbTimeout     int `pms:"timeout", json:"dbtimeout"`
+    UpdateRevenue bool `json:"update-revenue"`
+  }
+}
+
+jsonData := []byte(`
+{
+    "timeout": 30000,
+    "Db": {
+      "connectstring": "user=xyz, pass=åäö, ...",
+      "batch": 44,
+      "dbtimeout": 20000,
+      "update-revenue": true
+    }
+}`)
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+
+// read from JSON payload
+var ctx MyContext
+if err := json.Unmarshal(jsonData, &ctx); err != nil {
+  panic()
+}
+
+// and write to parameter store
+err := s.Marshal(&ctx)
+if len(err) > 0
+  panic()
+}
+```
