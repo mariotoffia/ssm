@@ -3,6 +3,8 @@ This library is intended to allow for encode / decode _go_ `struct` _fields_ fro
 
 This library just in v0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` & `Marshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal / marshal _pms_ and _asm_ fields.
 
+It is also possible to generate object, _JSON_ reports to e.g. use with CDK to that uses Cloud Formation to provision parameters and secrets. It is completely customizeable so you may integrate in your _DevOps_ pipeline.
+
 Only string value (**not binary**) for Secrets Manager is currently supported!
 
 How to use it; in the `go-mod` include the follwing requirement
