@@ -39,6 +39,19 @@ The above example uses keys from
 + /eap/test-service/db/batchsize (Parameter Store)
 + /eap/test-service/db/timeout (Parameter Store)
 
+The counterpart `Marshal` in essence looks like this (see below for more information about _Marshal_)
+```go
+ctx := MyContext { Caller: "kalle", 
+// initalize the struct and substruct ...
+}
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+err := s.Marshal(&ctx)
+if len(err) > 0
+  panic()
+}
+```
+
 # Standard Usage
 
 ## Good For Lambda Configuration
