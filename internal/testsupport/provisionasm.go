@@ -82,11 +82,6 @@ func DeleteAllUnittestSecrets() error {
 			break
 		}
 
-		if resp.NextToken == nil {
-			log.Debug().Msg("No more asm-secrets to delete (note that you may to delete them 30 minutes after creation to be found!")
-			break
-		}
-
 		inp.NextToken = resp.NextToken
 		for _, s := range resp.SecretList {
 			log.Debug().Msgf("Found asm-secret %s", *s.Name)
@@ -94,6 +89,11 @@ func DeleteAllUnittestSecrets() error {
 				internalDelete(secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
 					ForceDeleteWithoutRecovery: aws.Bool(true)})
 			}
+		}
+
+		if resp.NextToken == nil {
+			log.Debug().Msg("No more asm-secrets to delete (note that you may to delete them some minutes after creation to be found!")
+			break
 		}
 	}
 
