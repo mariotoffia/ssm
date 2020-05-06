@@ -3,7 +3,7 @@ This library is intended to allow for encode / decode _go_ `struct` _fields_ fro
 
 This library just in v0.0.1 release and hence in non usable state. It basically now can do a plain `Unmarshal` & `Marshal` operation, with PMS and ASM, partially or fully with reporting of which fields did not have any PMS counterpart. It also supports Filtering for selective unmarshal / marshal _pms_ and _asm_ fields.
 
-It is also possible to generate object, _JSON_ reports to e.g. use with CDK to that uses Cloud Formation to provision parameters and secrets. It is completely customizeable so you may integrate in your _DevOps_ pipeline.
+It is also possible to generate object, _JSON_ reports to e.g. use with [CDK](https://github.com/aws/aws-cdk) to that uses Cloud Formation to provision [parameters](https://github.com/aws/aws-cdk/tree/master/packages/%40aws-cdk/aws-ssm) and [secrets](https://github.com/aws/aws-cdk/tree/master/packages/%40aws-cdk/aws-secretsmanager). It is completely customizeable so you may integrate in your _DevOps_ pipeline.
 
 Only string value (**not binary**) for Secrets Manager is currently supported!
 
@@ -497,3 +497,14 @@ Renders a _JSON_ report on the following format:
 ```
 
 However since it returns a `Report` object containing `Parameters` you may do your own _JSON_ or otherwise generation from the `Report` object. It is also possible to use _filter_ to filter out fields in same manner as `Marshal` and `Unmarshal` works.
+
+From this JSON it is possible to transform it to e.g. CDK `@aws-cdk/aws-ssm` object such as
+```js
+new ssm.StringParameter(stack, 'Parameter', {
+  allowedPattern: '.*',
+  description: 'The value Foo',
+  parameterName: 'FooParameter',
+  stringValue: 'Foo',
+  tier: ssm.ParameterTier.ADVANCED,
+});
+```
