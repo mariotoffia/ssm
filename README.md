@@ -508,3 +508,97 @@ new ssm.StringParameter(stack, 'Parameter', {
   tier: ssm.ParameterTier.ADVANCED,
 });
 ```
+
+## CDK Generator
+There is a _npm_ package called [ssm-cdk-generator](https://www.npmjs.com/package/ssm-cdk-generator) that can use the report output to produce [CDK Constrcut](https://docs.aws.amazon.com/cdk/latest/guide/constructs.html) that creates CDK Secrets Manager Cloud Formation `CfnSecret` and Parameter Store Cloud Formation `CfnParameter`. It is somewhat templateable so you may modify the rendered code if you wish. However, the goal is to be able to generate and include those into a [CDK Stack](https://docs.aws.amazon.com/cdk/latest/guide/stacks.html).
+
+For example given the report _JSON_ file
+
+```json
+{
+  "parameters": [
+    {
+      "type": "secrets-manager",
+      "fqname": "/unittest-39525d76/test-service/asmsub/ext",
+      "keyid": "",
+      "description": "",
+      "tags": {"gurka":"biffen","nasse":"hunden"},
+      "details": null,
+      "value": "{\"user\": \"nisse\", \"password\":\"\"}",
+      "strkey": "password"
+    },
+    {
+      "type": "parameter-store",
+      "fqname": "/unittest-39525d76/simple/test",
+      "keyid": "arn://edjkfedjiojifoe:121221/askodsklds",
+      "description": "A sample value",
+      "tags": {"my":"hobby", "by": "test"},
+      "details": {
+        "pattern": ".*",
+        "tier": "Standard"
+      },
+      "value": "Thy name",
+      "valuetype": "String"
+    }                
+  ]
+}
+```
+
+and use _ssm-cdk-generator_ will output the following using default templates.
+
+```typescript
+import * as cdk from '@aws-cdk/core';
+    import * as asm from '@aws-cdk/aws-secretsmanager';
+    import * as pms from '@aws-cdk/aws-ssm';
+
+    export class SsmParamsConstruct extends cdk.Construct {
+      constructor(scope: cdk.Construct, id: string) {
+        super(scope, id);
+
+        // SetupSecrets & SetupParameters must be named exactly as stated below!
+        this.SetupSecrets();
+        this.SetupParameters();
+      }
+
+      private SetupSecrets() {
+              new asm.CfnSecret(this, 'Secret1', {
+                description: '',
+                name: '/unittest-39525d76/test-service/asmsub/ext',
+                generateSecretString: {
+                  secretStringTemplate: '{"user": "nisse", "password":""}',
+                  generateStringKey: 'password',
+                },
+                tags: [{"key":"gurka","value":"biffen"},{"key":"nasse","value":"hunden"}]
+              });
+
+      }
+
+      private SetupParameters() {
+          new pms.CfnParameter(this, 'Parameter0', {
+                name: '/unittest-39525d76/simple/test',
+                type: 'String',
+                value: 'Thy name',
+                allowedPattern: '.*',
+                description: 'A sample value',
+                policies: ''
+                tags: {"my":"hobby","by":"test"},
+                tier: 'Standard'
+              });
+      }
+    }
+```
+
+Use the _node app/index.js --help_ to get help on which parameters you may use.
+
+```bash
+Options:
+  --help         Show help                                             [boolean]
+  --version      Show version number                                   [boolean]
+  --outfile, -o  An optional outfile to write the resulting CDK Construct
+  --stdout       Output the result onto stdout. This may be combined with
+                 --outfile
+  --infile, -i   The ssm report file to read from filesystem instead of default
+                 stdin
+  --tsconfig     Optional tsconfig.json file to use when generating the source
+                 code
+```

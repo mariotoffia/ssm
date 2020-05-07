@@ -20,6 +20,10 @@ const argv = require('yargs')
   .option('tsconfig', {
     describe: 'Optional tsconfig.json file to use when generating the source code'
   })
+  .option('clsname', {
+    alias: 'c',
+    describe: 'Optional a class name for the generated CDK class'
+  })
   .argv
 
 if (argv.help) {
