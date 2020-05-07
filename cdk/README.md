@@ -2,7 +2,7 @@
 This package generates CDK classes, using templates, from the go ssm report.
 
 ## Reporting
-It is possible to generate a report as object and JSON. This may be used in a _DevOps_ pipeline to e.g. use CDK to create Parameter Store & Secrets Manager entities to be provisioned using cloud formation. Hence it is possible to have
+It is possible to generate a report as object and JSON using the golang [ssm report](https://github.com/mariotoffia/ssm). This may be used in a _DevOps_ pipeline to e.g. use CDK to create Parameter Store & Secrets Manager entities to be provisioned using cloud formation. Hence it is possible to have
 default values by passing the struct as value instead of `nil` pointer with a specific `interface` type.
 
 For example, the following
@@ -83,8 +83,7 @@ new ssm.StringParameter(stack, 'Parameter', {
 ```
 
 ## CDK Generator
-
-For example given the report _JSON_ file above and use _ssm-cdk-generator_ will output the following using default templates.
+This is an implementation of a CDK generator, that is template driven to fit your CDK generation needs.For example given the report _JSON_ file above and use _ssm-cdk-generator_ will output the following using default templates.
 
 ```typescript
 import * as cdk from '@aws-cdk/core';
