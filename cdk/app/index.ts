@@ -38,11 +38,6 @@ const argv = require('yargs')
   })
   .argv
 
-if (argv.help) {
-  console.log("usage --stdout --outfile=<filename.ts>");
-  process.exit(0);
-}
-
 // Reporter
 const reporter = new Reporter();
 
