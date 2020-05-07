@@ -409,25 +409,19 @@ default values by passing the struct as value instead of `nil` pointer with a sp
 
 For example, the following
 ```go
-type StructWithSubStruct struct {
-	Name string `pms:"test, prefix=simple"`
-	Sub  struct {
-		Apa int    `pms:"ext"`
-		Nu  string `pms:"myname"`
-	}
-	AsmSub struct {
-		Apa2 int    `asm:"ext"`
-		Nu2  string `asm:"myname"`
-	}
+type Sample struct {
+  ConnectionString string `asm:"connectstring, strkey=password, gurka=biffen, nasse=hunden"`
+  Secret string `asm:"mysecret"`
+  Parameter string `pms:"parameter, description=A sample value, pattern=.*, my=hobby, by=test"`
 }
 
-set := testsupport.StructWithSubStruct{Name: "Thy name"}
-set.Sub.Apa = 44
-set.Sub.Nu = "hibby bibby"
-set.AsmSub.Apa2 = 444
-set.AsmSub.Nu2 = "ingen fantasi"
+set := Sample{
+  ConnectString: "{\"user\":\"nisse\"}",
+  Secret: "{\"private\": \"nobody knows\", \"lockkey\":\"eeej1¤¤&1!\"}",
+  Parameter: "a parameter"
+}
 
-s := NewSsmSerializer(stage, "test-service")
+s := NewSsmSerializer("dev", "test-service")
 objs, json, err := s.ReportWithOpts(&set, NoFilter, true)
 if err != nil {
   panic(err)
@@ -440,7 +434,7 @@ Renders a _JSON_ report on the following format:
   "parameters": [
     {
       "type": "secrets-manager",
-      "fqname": "/unittest-39525d76/test-service/asmsub/ext",
+      "fqname": "/dev/test-service/connectstring",
       "keyid": "",
       "description": "",
       "tags": {"gurka":"biffen","nasse":"hunden"},
@@ -451,7 +445,7 @@ Renders a _JSON_ report on the following format:
     },
     {
       "type": "secrets-manager",
-      "fqname": "/unittest-39525d76/test-service/asmsub/babby",
+      "fqname": "/dev/test-service/mysecret",
       "keyid": "",
       "description": "",
       "tags": {},
@@ -462,15 +456,15 @@ Renders a _JSON_ report on the following format:
     },
     {
       "type": "parameter-store",
-      "fqname": "/unittest-39525d76/simple/test",
-      "keyid": "arn://edjkfedjiojifoe:121221/askodsklds",
+      "fqname": "/dev/test-service/parameter",
+      "keyid": "",
       "description": "A sample value",
       "tags": {"my":"hobby", "by": "test"},
       "details": {
         "pattern": ".*",
         "tier": "Standard"
       },
-      "value": "Thy name",
+      "value": "a parameter",
       "valuetype": "String"
     }                
   ]
@@ -510,9 +504,9 @@ import * as cdk from '@aws-cdk/core';
       }
 
       private SetupSecrets() {
-              new asm.CfnSecret(this, 'Secret1', {
+              new asm.CfnSecret(this, 'Secret0', {
                 description: '',
-                name: '/unittest-39525d76/test-service/asmsub/ext',
+                name: '/dev/test-service/connectstring',
                 generateSecretString: {
                   secretStringTemplate: '{"user": "nisse"}',
                   generateStringKey: 'password',
@@ -521,7 +515,7 @@ import * as cdk from '@aws-cdk/core';
               });
               new asm.CfnSecret(this, 'Secret1', {
                 description: '',
-                name: '/unittest-39525d76/test-service/asmsub/babby',
+                name: '/dev/test-service/mysecret',
                 secretString: '{"private": "nobody knows", "lockkey":"eeej1¤¤&1!"}',
                 tags: []
               });
@@ -530,9 +524,9 @@ import * as cdk from '@aws-cdk/core';
 
       private SetupParameters() {
           new pms.CfnParameter(this, 'Parameter0', {
-                name: '/unittest-39525d76/simple/test',
+                name: '/dev/test-service/parameter',
                 type: 'String',
-                value: 'Thy name',
+                value: 'a parameter',
                 allowedPattern: '.*',
                 description: 'A sample value',
                 policies: ''
