@@ -1,0 +1,30 @@
+{
+  "name": "ssm-cdk-generator",
+  "version": "1.0.0",
+  "description": "This is a CDK generator that takes the go github.com/mariotoffia/ssm.git Report and produces CDK objects",
+  "main": "app/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "node app/index.js --stdout --infile report.json"
+  },
+  "keywords": [
+    "cdk",
+    "go",
+    "parameter-store",
+    "secrets-manager",
+    "aws"
+  ],
+  "author": "Mario Toffia",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/node": "10.17.5",
+    "@types/yargs": "^15.0.4",
+    "ts-morph": "^7.0.3",
+    "ts-node": "^8.1.0",
+    "typescript": "~3.7.2"
+  },
+  "dependencies": {
+    "yargs": "^15.3.1"
+  }
+}

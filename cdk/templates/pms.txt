@@ -1,0 +1,10 @@
+new pms.CfnParameter(this, 'Parameter{index}', {
+      name: '{fqname}',
+      type: '{valuetype}',
+      value: '{value}',
+      allowedPattern: '{details.pattern}',
+      description: '{description}',
+      policies: '{policies}'
+      tags: {tags},
+      tier: '{details.tier}'
+    });

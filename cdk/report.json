@@ -1,0 +1,27 @@
+{
+  "parameters": [
+    {
+      "type": "secrets-manager",
+      "fqname": "/unittest-39525d76/test-service/asmsub/ext",
+      "keyid": "",
+      "description": "",
+      "tags": {"gurka":"biffen","nasse":"hunden"},
+      "details": null,
+      "value": "{\"user\": \"nisse\", \"password\":\"\"}",
+      "strkey": "password"
+    },
+    {
+      "type": "parameter-store",
+      "fqname": "/unittest-39525d76/simple/test",
+      "keyid": "arn://edjkfedjiojifoe:121221/askodsklds",
+      "description": "A sample value",
+      "tags": {"my":"hobby", "by": "test"},
+      "details": {
+        "pattern": ".*",
+        "tier": "Standard"
+      },
+      "value": "Thy name",
+      "valuetype": "String"
+    }                
+  ]
+}

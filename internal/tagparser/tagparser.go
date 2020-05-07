@@ -46,6 +46,8 @@ func ParseAsmTagString(s string, prefix string, env string, svc string) (SsmTag,
 				tag.versionStage = kv[1]
 			case "description":
 				tag.description = kv[1]
+			case "strkey":
+				tag.stringkey = kv[1]
 			default:
 				tag.tags[kv[0]] = kv[1]
 			}

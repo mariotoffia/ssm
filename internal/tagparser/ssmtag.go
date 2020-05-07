@@ -156,7 +156,16 @@ type AsmTag struct {
 	tags map[string]string
 	// The description for this secret (if any)
 	description string
+	// If the value of this secret is a JSON payload. This identifies where in the JSON payload
+	// the secrets manager shall genereate the secret. For example {"user":"nisse", "password":""}
+	// and this property is password. Then the secrets manager will generate secret into the "password"
+	// property.
+	stringkey string
 }
+
+// StringKey is the name of the element in the JSON payload in value where secrets
+// manager shall generate it's secret into.
+func (t *AsmTag) StringKey() string { return t.stringkey }
 
 // Description returns the description for this secret (if any)
 func (t *AsmTag) Description() string { return t.description }

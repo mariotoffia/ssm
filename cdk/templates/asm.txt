@@ -1,0 +1,9 @@
+    new asm.CfnSecret(this, 'Secret1', {
+      description: '{description}',
+      name: '{fqname}',
+      generateSecretString: {
+        secretStringTemplate: '{value}',
+        generateStringKey: 'password',        
+      },
+      tags: {tags}
+    });

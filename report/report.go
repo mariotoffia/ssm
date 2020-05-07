@@ -43,6 +43,8 @@ type Parameter struct {
 	Details interface{} `json:"details"`
 	// Value the value of this parameter
 	Value string `json:"value"`
+	// The type of the value. For example PMS has String|StringList|SecureString.
+	ValueType string `json:"valuetype"`
 }
 
 // PmsParameterDetails describes the details for a parameter store parameter
@@ -51,6 +53,13 @@ type PmsParameterDetails struct {
 	Pattern string `json:"pattern"`
 	// Tier specifies the tier for the parameter
 	Tier ssm.ParameterTier `json:"tier"`
+}
+
+// AsmParameterDetails specifies Secrets Manager secret specifics
+type AsmParameterDetails struct {
+	// StringKey is the name of the json key where the Secrets Manager shall genereate it's secret into.
+	// This is for template driven secrets where a JSON payload is set into the SecretString
+	StringKey string `json:"strkey"`
 }
 
 // Reporter is the type to produce report of the configuration
@@ -116,9 +125,21 @@ func (r *Reporter) renderReport(node *reflectparser.SsmNode,
 					}
 
 					prm.Type = ParameterStore
+
+					if tag.Secure() {
+						prm.ValueType = "SecureString"
+					} else {
+						prm.ValueType = "String"
+					}
 				}
 			} else {
-				prm.Type = SecretsManager
+				if tag, ok := node.Tag().(*tagparser.AsmTag); ok {
+					prm.Type = SecretsManager
+					prm.ValueType = "SecureString"
+					prm.Details = AsmParameterDetails{
+						StringKey: tag.StringKey(),
+					}
+				}
 			}
 
 			if value {

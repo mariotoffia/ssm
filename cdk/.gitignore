@@ -1,0 +1,9 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+dist
+
+# Parcel build directories
+.cache
+.build

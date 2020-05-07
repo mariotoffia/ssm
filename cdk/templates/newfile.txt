@@ -1,0 +1,20 @@
+    import * as cdk from '@aws-cdk/core';
+    import * as asm from '@aws-cdk/aws-secretsmanager';
+    import * as pms from '@aws-cdk/aws-ssm';
+
+    export class {classname} extends cdk.Construct {
+      constructor(scope: cdk.Construct, id: string) {
+        super(scope, id);
+
+        // SetupSecrets & SetupParameters must be named exactly as stated below!
+        this.SetupSecrets();
+        this.SetupParameters();
+      }
+      
+      private SetupSecrets() {
+
+      }
+
+      private SetupParameters() {
+      }
+    }
