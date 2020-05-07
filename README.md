@@ -93,6 +93,55 @@ Note that plain `Unmarshal` will examine the structs for **both** _asm_ and _pms
 
 Since the `keyid=default` is specifies (if a write operation and key do not exists) that the account default CMK is used.
 
+You may use reporting and generation of CDK artifacts for Cloud Formation deployments. The reporting and CDK class generation is customizeable.
+
+```go
+s := NewSsmSerializer("dev", "test-service")
+objs, json, err := s.ReportWithOpts(&ctx, NoFilter, true)
+```
+The above will cereate a _JSON_ report format that can be used to generate CDK classes. Example output
+```typescript
+import * as cdk from '@aws-cdk/core';
+    import * as asm from '@aws-cdk/aws-secretsmanager';
+    import * as pms from '@aws-cdk/aws-ssm';
+
+    export class SsmParamsConstruct extends cdk.Construct {
+      constructor(scope: cdk.Construct, id: string) {
+        super(scope, id);
+
+        this.SetupSecrets();
+        this.SetupParameters();
+      }
+
+      private SetupSecrets() {
+              new asm.CfnSecret(this, 'Secret0', {
+                description: '',
+                name: '/dev/test-service/connectstring',
+                generateSecretString: {
+                  secretStringTemplate: '{"user": "nisse"}',
+                  generateStringKey: 'password',
+                },
+                tags: [{"key":"gurka","value":"biffen"},{"key":"nasse","value":"hunden"}]
+              });
+            // ...
+      }
+
+      private SetupParameters() {
+          new pms.CfnParameter(this, 'Parameter0', {
+                name: '/dev/test-service/parameter',
+                type: 'String',
+                value: 'a parameter',
+                allowedPattern: '.*',
+                description: 'A sample value',
+                policies: ''
+                tags: {"my":"hobby","by":"test"},
+                tier: 'Standard'
+              });
+            // ...
+      }
+    }
+```
+
 ## AWS Secrets Manager
 In addition to Systems Manager, Parameter Store, this serializer can handle _asm_ tags that referes to the Secrets Manager instead. This is good if you e.g. have a shared secret for a RDS and wish to rotate the secret. For example, if we would use PMS for all configuration around how to handle the database and logic around it and then use the secrets manager for the actual connection string. It could look like this:
 
