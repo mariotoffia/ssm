@@ -1,4 +1,4 @@
-import { Reporter, Parameter } from './reporter';
+import { Reporter, Parameter, AsmParameterDetails } from './reporter';
 import { Project, StructureKind, SourceFile, ParameterDeclaration } from "ts-morph";
 import fs = require('fs');
 import { Template } from './template';
@@ -18,6 +18,7 @@ export class Emitter {
   constructor(private _reporter: Reporter,
     private readonly _pmsTemplate: Template,
     private readonly _asmTemplate: Template,
+    private readonly _asmgkTemplate: Template,
     private readonly _newFileTemplate: Template, ) {
   }
 
@@ -80,6 +81,12 @@ export class Emitter {
   private GenerateAsmParameter(param: Parameter) {
     const cls = this._sourcefile.getClasses()[0];
     const func = cls.getMethodOrThrow("SetupSecrets")
-    func.addStatements(this._asmTemplate.RenderIndexedCfnTags(param, this._asmcount++));
+
+    var details = <AsmParameterDetails>param.details;
+    if (details.strkey) {
+      func.addStatements(this._asmgkTemplate.RenderIndexedCfnTags(param, this._asmcount++));  
+    } else {
+      func.addStatements(this._asmTemplate.RenderIndexedCfnTags(param, this._asmcount++));
+    }
   }
 }

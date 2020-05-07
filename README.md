@@ -439,59 +439,40 @@ Renders a _JSON_ report on the following format:
 {
   "parameters": [
     {
-      "type": "parameter-store",
-      "fqname": "/unittest-39525d76/simple/test",
-      "keyid": "",
-      "description": "",
-      "tags": {},
-      "details": {
-        "pattern": "",
-        "tier": "Standard"
-      },
-      "value": "Thy name"
-    },
-    {
-      "type": "parameter-store",
-      "fqname": "/unittest-39525d76/test-service/sub/ext",
-      "keyid": "",
-      "description": "",
-      "tags": {},
-      "details": {
-        "pattern": "",
-        "tier": "Standard"
-      },
-      "value": "44"
-    },
-    {
-      "type": "parameter-store",
-      "fqname": "/unittest-39525d76/test-service/sub/myname",
-      "keyid": "",
-      "description": "",
-      "tags": {},
-      "details": {
-        "pattern": "",
-        "tier": "Standard"
-      },
-      "value": "hibby bibby"
-    },
-    {
       "type": "secrets-manager",
       "fqname": "/unittest-39525d76/test-service/asmsub/ext",
       "keyid": "",
       "description": "",
-      "tags": {},
-      "details": null,
-      "value": "444"
+      "tags": {"gurka":"biffen","nasse":"hunden"},
+      "details": {
+        "strkey": "password"
+      },
+      "value": "{\"user\": \"nisse\"}"      
     },
     {
       "type": "secrets-manager",
-      "fqname": "/unittest-39525d76/test-service/asmsub/myname",
+      "fqname": "/unittest-39525d76/test-service/asmsub/babby",
       "keyid": "",
       "description": "",
       "tags": {},
-      "details": null,
-      "value": "ingen fantasi"
-    }
+      "details": {
+        "strkey": null
+      },
+      "value": "{\"private\": \"nobody knows\", \"lockkey\":\"eeej1¤¤&1!\"}"      
+    },
+    {
+      "type": "parameter-store",
+      "fqname": "/unittest-39525d76/simple/test",
+      "keyid": "arn://edjkfedjiojifoe:121221/askodsklds",
+      "description": "A sample value",
+      "tags": {"my":"hobby", "by": "test"},
+      "details": {
+        "pattern": ".*",
+        "tier": "Standard"
+      },
+      "value": "Thy name",
+      "valuetype": "String"
+    }                
   ]
 }
 ```
@@ -512,40 +493,7 @@ new ssm.StringParameter(stack, 'Parameter', {
 ## CDK Generator
 There is a _npm_ package called [ssm-cdk-generator](https://www.npmjs.com/package/ssm-cdk-generator) that can use the report output to produce [CDK Constrcut](https://docs.aws.amazon.com/cdk/latest/guide/constructs.html) that creates CDK Secrets Manager Cloud Formation `CfnSecret` and Parameter Store Cloud Formation `CfnParameter`. It is somewhat templateable so you may modify the rendered code if you wish. However, the goal is to be able to generate and include those into a [CDK Stack](https://docs.aws.amazon.com/cdk/latest/guide/stacks.html).
 
-For example given the report _JSON_ file
-
-```json
-{
-  "parameters": [
-    {
-      "type": "secrets-manager",
-      "fqname": "/unittest-39525d76/test-service/asmsub/ext",
-      "keyid": "",
-      "description": "",
-      "tags": {"gurka":"biffen","nasse":"hunden"},
-      "details": {
-        "strkey": "password"
-      },
-      "value": "{\"user\": \"nisse\", \"password\":\"\"}"      
-    },
-    {
-      "type": "parameter-store",
-      "fqname": "/unittest-39525d76/simple/test",
-      "keyid": "arn://edjkfedjiojifoe:121221/askodsklds",
-      "description": "A sample value",
-      "tags": {"my":"hobby", "by": "test"},
-      "details": {
-        "pattern": ".*",
-        "tier": "Standard"
-      },
-      "value": "Thy name",
-      "valuetype": "String"
-    }                
-  ]
-}
-```
-
-and use _ssm-cdk-generator_ will output the following using default templates.
+For example given the report _JSON_ file above and use _ssm-cdk-generator_ will output the following using default templates.
 
 ```typescript
 import * as cdk from '@aws-cdk/core';
@@ -566,10 +514,16 @@ import * as cdk from '@aws-cdk/core';
                 description: '',
                 name: '/unittest-39525d76/test-service/asmsub/ext',
                 generateSecretString: {
-                  secretStringTemplate: '{"user": "nisse", "password":""}',
+                  secretStringTemplate: '{"user": "nisse"}',
                   generateStringKey: 'password',
                 },
                 tags: [{"key":"gurka","value":"biffen"},{"key":"nasse","value":"hunden"}]
+              });
+              new asm.CfnSecret(this, 'Secret1', {
+                description: '',
+                name: '/unittest-39525d76/test-service/asmsub/babby',
+                secretString: '{"private": "nobody knows", "lockkey":"eeej1¤¤&1!"}',
+                tags: []
               });
 
       }

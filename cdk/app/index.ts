@@ -26,7 +26,11 @@ const argv = require('yargs')
   })
   .option('tmplasm', {
     alias: 'ta',
-    describe: 'Optional a template fqfilepath that shall be used for asm parameter'
+    describe: 'Optional a template fq filepath that shall be used for standard asm parameter'
+  })
+  .option('tmplasmgk', {
+    alias: 'tagk',
+    describe: 'Optional a template fq filepath that shall be used for template based asm parameter generation'
   })
   .option('tmplpms', {
     alias: 'tp',
@@ -53,14 +57,16 @@ reporter.Parse();
 // Templates
 const tmplpms = argv.tmplpms ? argv.tmplpms : path.join(__dirname,"../templates/pms.txt");
 const tmplasm = argv.tmplasm ? argv.tmplasm : path.join(__dirname,"../templates/asm.txt");
+const tmplasmgk = argv.tmplasmgk ? argv.tmplasmgk : path.join(__dirname,"../templates/asm-gensecret.txt");
 const tmplclz = argv.tmplclz ? argv.tmplclz : path.join(__dirname,"../templates/newfile.txt");
 
 const pmsTemplate = new Template(tmplpms, true);
 const asmTemplate = new Template(tmplasm, true);
+const asmgkTemplate = new Template(tmplasmgk, true);
 const newFileTemplate = new Template(tmplclz, true);
 
 // Emitter
-const emitter = new Emitter(reporter, pmsTemplate, asmTemplate, newFileTemplate);
+const emitter = new Emitter(reporter, pmsTemplate, asmTemplate, asmgkTemplate, newFileTemplate);
 emitter.outfile = argv.outfile;
 emitter.tsconfig = argv.tsconfig;
 

@@ -9,7 +9,18 @@
       "details": {
         "strkey": "password"
       },
-      "value": "{\"user\": \"nisse\", \"password\":\"\"}"      
+      "value": "{\"user\": \"nisse\"}"      
+    },
+    {
+      "type": "secrets-manager",
+      "fqname": "/unittest-39525d76/test-service/asmsub/babby",
+      "keyid": "",
+      "description": "",
+      "tags": {},
+      "details": {
+        "strkey": null
+      },
+      "value": "{\"private\": \"nobody knows\", \"lockkey\":\"eeej1¤¤&1!\"}"      
     },
     {
       "type": "parameter-store",

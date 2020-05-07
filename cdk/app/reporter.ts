@@ -18,6 +18,10 @@ export interface PmsParameterDetails extends ParameterDetails {
   tier: string
 }
 
+export interface AsmParameterDetails extends ParameterDetails {
+  strkey: string;
+}
+
 export interface Report {
   parameters: Parameter[];
 }
