@@ -1,4 +1,4 @@
-    new asm.CfnSecret(this, 'Secret1', {
+    new asm.CfnSecret(this, 'Secret{index}', {
       description: '{description}',
       name: '{fqname}',
       secretString: '{value}',

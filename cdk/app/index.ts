@@ -69,6 +69,9 @@ const newFileTemplate = new Template(tmplclz, true);
 const emitter = new Emitter(reporter, pmsTemplate, asmTemplate, asmgkTemplate, newFileTemplate);
 emitter.outfile = argv.outfile;
 emitter.tsconfig = argv.tsconfig;
+if (argv.clsname) {
+  emitter.classname = argv.clsname
+}
 
 // Emit the CDK Construct
 var result = emitter.Emit();
