@@ -24,6 +24,18 @@ const argv = require('yargs')
     alias: 'c',
     describe: 'Optional a class name for the generated CDK class'
   })
+  .option('tmplasm', {
+    alias: 'ta',
+    describe: 'Optional a template fqfilepath that shall be used for asm parameter'
+  })
+  .option('tmplpms', {
+    alias: 'tp',
+    describe: 'Optional a template fq filepath that shall be used for generating pms parameter'
+  })
+  .option('tmplclz', {
+    alias: 'tc',
+    describe: 'Optional a template fq filepath that shall be used for generating a new file / class'
+  })
   .argv
 
 if (argv.help) {
@@ -44,9 +56,13 @@ if (argv.infile) {
 reporter.Parse();
 
 // Templates
-const pmsTemplate = new Template(path.join(__dirname,"../templates/pms.txt"), true);
-const asmTemplate = new Template(path.join(__dirname,"../templates/asm.txt"), true);
-const newFileTemplate = new Template(path.join(__dirname,"../templates/newfile.txt"), true);
+const tmplpms = argv.tmplpms ? argv.tmplpms : path.join(__dirname,"../templates/pms.txt");
+const tmplasm = argv.tmplasm ? argv.tmplasm : path.join(__dirname,"../templates/asm.txt");
+const tmplclz = argv.tmplclz ? argv.tmplclz : path.join(__dirname,"../templates/newfile.txt");
+
+const pmsTemplate = new Template(tmplpms, true);
+const asmTemplate = new Template(tmplasm, true);
+const newFileTemplate = new Template(tmplclz, true);
 
 // Emitter
 const emitter = new Emitter(reporter, pmsTemplate, asmTemplate, newFileTemplate);

@@ -593,13 +593,35 @@ Use the _node app/index.js --help_ to get help on which parameters you may use.
 
 ```bash
 Options:
-  --help         Show help                                             [boolean]
-  --version      Show version number                                   [boolean]
-  --outfile, -o  An optional outfile to write the resulting CDK Construct
-  --stdout       Output the result onto stdout. This may be combined with
-                 --outfile
-  --infile, -i   The ssm report file to read from filesystem instead of default
-                 stdin
-  --tsconfig     Optional tsconfig.json file to use when generating the source
-                 code
+  --help           Show help                                           [boolean]
+  --version        Show version number                                 [boolean]
+  --outfile, -o    An optional outfile to write the resulting CDK Construct
+  --stdout         Output the result onto stdout. This may be combined with
+                   --outfile
+  --infile, -i     The ssm report file to read from filesystem instead of
+                   default stdin
+  --tsconfig       Optional tsconfig.json file to use when generating the source
+                   code
+  --clsname, -c    Optional a class name for the generated CDK class
+  --tmplasm, --ta  Optional a template fqfilepath that shall be used for asm
+                   parameter
+  --tmplpms, --tp  Optional a template fq filepath that shall be used for
+                   generating pms parameter
+  --tmplclz, --tc  Optional a template fq filepath that shall be used for
+                   generating a new file / class
+```
+
+Templates are very simple and the default resides under the _ssm-cdk-generator/templates for reviewing. For example a template to generate a single Parameter Store Parameter could look like this.
+
+```typescript
+new pms.CfnParameter(this, 'Parameter{index}', {
+      name: '{fqname}',
+      type: '{valuetype}',
+      value: '{value}',
+      allowedPattern: '{details.pattern}',
+      description: '{description}',
+      policies: '{policies}'
+      tags: {tags},
+      tier: '{details.tier}'
+    });
 ```
