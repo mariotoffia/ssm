@@ -523,9 +523,10 @@ For example given the report _JSON_ file
       "keyid": "",
       "description": "",
       "tags": {"gurka":"biffen","nasse":"hunden"},
-      "details": null,
-      "value": "{\"user\": \"nisse\", \"password\":\"\"}",
-      "strkey": "password"
+      "details": {
+        "strkey": "password"
+      },
+      "value": "{\"user\": \"nisse\", \"password\":\"\"}"      
     },
     {
       "type": "parameter-store",

@@ -3,7 +3,7 @@
       name: '{fqname}',
       generateSecretString: {
         secretStringTemplate: '{value}',
-        generateStringKey: 'password',        
+        generateStringKey: '{details.strkey}',        
       },
       tags: {tags}
     });
