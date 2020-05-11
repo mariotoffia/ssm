@@ -12,7 +12,8 @@ type tagParser struct {
 // parser.
 func NewTagParser() parser.TagParser {
 	return &tagParser{
-		realParser: parser.NewTagParser([]string{"name",
+		realParser: parser.NewTagParser([]string{
+			"name",
 			"prefix",
 			"keyid",
 			"description",
@@ -33,5 +34,10 @@ func (p *tagParser) ParseTagString(tagstring string,
 	}
 
 	q := s.(*parser.StructTagImpl)
+
+	if _, ok := q.Named["overwrite"]; !ok {
+		q.Named["overwrite"] = "true"
+	}
+
 	return &PmsTagStruct{StructTagImpl: *q}, nil
 }

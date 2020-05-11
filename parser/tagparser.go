@@ -46,7 +46,7 @@ func (p *tagParser) ParseTagString(tagstring string,
 
 		switch kv[0] {
 		case "name":
-			st.Named["name"] = kv[1]
+			st.Named["name"] = strings.ToLower(kv[1])
 		case "prefix":
 			st.Named["prefix"] = RenderPrefix(kv[1], env, "")
 			break
@@ -97,10 +97,10 @@ func RenderPrefix(prefix string, env string, svc string) string {
 	}
 
 	if prefix == "" {
-		return fmt.Sprintf("/%s/%s", env, svc)
+		return strings.ToLower(fmt.Sprintf("/%s/%s", env, svc))
 	}
 	if svc == "" {
-		return fmt.Sprintf("/%s%s", env, prefix)
+		return strings.ToLower(fmt.Sprintf("/%s%s", env, prefix))
 	}
-	return fmt.Sprintf("/%s/%s%s", env, svc, prefix)
+	return strings.ToLower(fmt.Sprintf("/%s/%s%s", env, svc, prefix))
 }
