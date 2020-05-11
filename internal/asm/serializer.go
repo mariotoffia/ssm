@@ -41,11 +41,16 @@ func (p *Serializer) Get(node *parser.StructNode,
 
 	m := map[string]*parser.StructNode{}
 	parser.NodesToParameterMap(node, m, filter, []string{"asm"})
-
 	mprms := map[string]*secretsmanager.GetSecretValueOutput{}
 	im := map[string]support.FullNameField{}
+	extrprms := parser.ExtractPaths(m)
 
-	for _, prm := range parser.ExtractPaths(m) {
+	log.Debug().Str("svc", p.service).
+		Str("package", "asm").
+		Str("method", "Get").
+		Msgf("Fetching: %v", extrprms)
+
+	for _, prm := range extrprms {
 		if n, ok := m[prm]; ok {
 
 			if nasm, ok := ToAsmTag(n); ok {

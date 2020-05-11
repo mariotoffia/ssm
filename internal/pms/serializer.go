@@ -63,7 +63,10 @@ func (p *Serializer) Get(node *parser.StructNode,
 		WithDecryption: aws.Bool(issecure),
 	}
 
-	log.Debug().Str("svc", p.service).Msgf("Fetching: %v", params)
+	log.Debug().Str("svc", p.service).
+		Str("package", "pms").
+		Str("method", "Get").
+		Msgf("Fetching: %v", params)
 
 	prms, invalid, err := p.getFromAws(params)
 	if err != nil {

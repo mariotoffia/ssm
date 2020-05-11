@@ -24,6 +24,8 @@ func TestReportSingleAsmStringNilStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
+	parser.DumpNode(node)
+
 	reporter := NewWithTier(ssm.ParameterTierStandard)
 	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
 	if err != nil {

@@ -162,15 +162,16 @@ func (s *Serializer) unmarshal(v interface{},
 	}
 
 	tp := reflect.ValueOf(v)
-	parser := parser.New(s.service, s.env, "")
+	prs := parser.New(s.service, s.env, "")
 
 	if _, found := find(usage, UsePms); found {
-		parser.RegisterTagParser("pms", pms.NewTagParser())
-	} else if _, found := find(usage, UseAsm); found {
-		parser.RegisterTagParser("asm", asm.NewTagParser())
+		prs.RegisterTagParser("pms", pms.NewTagParser())
+	}
+	if _, found := find(usage, UseAsm); found {
+		prs.RegisterTagParser("asm", asm.NewTagParser())
 	}
 
-	node, err := parser.Parse(tp)
+	node, err := prs.Parse(tp)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +227,8 @@ func (s *Serializer) marshal(v interface{},
 
 	if _, found := find(usage, UsePms); found {
 		parser.RegisterTagParser("pms", pms.NewTagParser())
-	} else if _, found := find(usage, UseAsm); found {
+	}
+	if _, found := find(usage, UseAsm); found {
 		parser.RegisterTagParser("asm", asm.NewTagParser())
 	}
 

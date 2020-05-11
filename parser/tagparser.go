@@ -21,7 +21,6 @@ func (p *tagParser) ParseTagString(tagstring string,
 	env string,
 	svc string) (StructTag, error) {
 
-	fmt.Printf("parsing %s\n", tagstring)
 	st := &StructTagImpl{
 		Named: map[string]string{"prefix": RenderPrefix(prefix, env, svc)},
 		Tags:  map[string]string{},

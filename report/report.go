@@ -105,7 +105,7 @@ func (r *Reporter) renderReport(node *parser.StructNode,
 			var prm Parameter
 
 			if pmstag, ok := pms.ToPmsTag(node); ok {
-				prm := Parameter{
+				prm = Parameter{
 					Name:        pmstag.GetFullName(),
 					Description: pmstag.Description(),
 					Tags:        pmstag.GetTags(),
@@ -130,7 +130,7 @@ func (r *Reporter) renderReport(node *parser.StructNode,
 					prm.ValueType = "String"
 				}
 			} else if asmtag, ok := asm.ToAsmTag(node); ok {
-				prm := Parameter{
+				prm = Parameter{
 					Name:        asmtag.GetFullName(),
 					Description: asmtag.Description(),
 					Tags:        asmtag.GetTags(),
@@ -138,15 +138,18 @@ func (r *Reporter) renderReport(node *parser.StructNode,
 				}
 				prm.Type = SecretsManager
 				prm.ValueType = "SecureString"
-				prm.Details = AsmParameterDetails{
-					StringKey: asmtag.StringKey(),
+
+				if strKey := asmtag.StringKey(); strKey != "" {
+					prm.Details = AsmParameterDetails{
+						StringKey: strKey,
+					}
 				}
 
-				if pmstag.IsLocalKey() {
+				if asmtag.IsLocalKey() {
 					// TODO: need to resolve it to an ARN
-				} else if !pmstag.DefaultAccountKey() {
+				} else if !asmtag.DefaultAccountKey() {
 					// Key is ARN
-					prm.KeyID = pmstag.GetKeyName()
+					prm.KeyID = asmtag.GetKeyName()
 				}
 			} else {
 				log.Debug().Msgf("node %s has not pms or asm tag", node.FqName)

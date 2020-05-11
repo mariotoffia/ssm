@@ -52,7 +52,7 @@ func TestReportNestedStructValues(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	assert.Contains(t, "bubbi", json)
+	assert.Contains(t, json, "hibby bibby")
 	assert.Equal(t, 5, len(objs.Parameters))
 }
 
