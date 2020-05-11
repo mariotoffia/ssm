@@ -7,7 +7,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/mariotoffia/ssm.git/internal/tagparser"
 	"github.com/mariotoffia/ssm.git/parser"
 )
 
@@ -109,7 +108,7 @@ func (t *PmsTagStruct) SsmTier(defaultTier ssm.ParameterTier) ssm.ParameterTier 
 		return ssm.ParameterTierStandard
 	case Adv:
 		return ssm.ParameterTierAdvanced
-	case tagparser.Eval:
+	case Eval:
 		return ssm.ParameterTierIntelligentTiering
 	}
 

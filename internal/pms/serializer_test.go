@@ -1,6 +1,7 @@
 package pms
 
 import (
+	"flag"
 	"reflect"
 	"testing"
 
@@ -12,8 +13,13 @@ import (
 )
 
 var stage string
+var scope string
 
 func init() {
+	testing.Init() // Need to do this in order for flag.Parse() to work
+	flag.StringVar(&scope, "scope", "", "Scope for test")
+	flag.Parse()
+
 	stage = testsupport.UnittestStage()
 	log.Info().Msgf("Initializing PMS unittest with STAGE: %s", stage)
 
@@ -79,6 +85,10 @@ func TestUnmarshalWihSingleNestedStruct(t *testing.T) {
 }
 
 func TestMarshalWihSingleStringStruct(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	test := testsupport.SingleStringPmsStruct{Name: "my-custom name"}
 	tp := reflect.ValueOf(&test)
 
@@ -120,6 +130,9 @@ func TestMarshalWihSingleStringStruct(t *testing.T) {
 }
 
 func TestMarshalWihSingleNestedStruct(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
 
 	test := testsupport.StructWithSubStruct{Name: "kalle kula"}
 	test.Sub.Apa = 18

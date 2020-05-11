@@ -7,7 +7,6 @@ import (
 	"github.com/mariotoffia/ssm.git/internal/asm"
 	"github.com/mariotoffia/ssm.git/internal/common"
 	"github.com/mariotoffia/ssm.git/internal/pms"
-	"github.com/mariotoffia/ssm.git/internal/tagparser"
 	"github.com/mariotoffia/ssm.git/parser"
 	"github.com/mariotoffia/ssm.git/support"
 	"github.com/rs/zerolog/log"
@@ -162,20 +161,4 @@ func (r *Reporter) renderReport(node *parser.StructNode,
 	}
 
 	return params
-}
-
-func (r *Reporter) getTierFromTag(pmstag *tagparser.PmsTag) ssm.ParameterTier {
-
-	switch pmstag.Tier() {
-	case tagparser.Default:
-		return r.tier
-	case tagparser.Std:
-		return ssm.ParameterTierStandard
-	case tagparser.Adv:
-		return ssm.ParameterTierAdvanced
-	case tagparser.Eval:
-		return ssm.ParameterTierIntelligentTiering
-	}
-
-	return r.tier
 }

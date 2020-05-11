@@ -12,6 +12,8 @@ testverbose: testclean
 	@go test -v -cover ./...
 testclean:
 	@go clean -testcache
+testreadwrite:
+	@go test -v -scope=rw
 testremoteclean:
 	@go test -v -run TestCleanAll -scope=clean
 dep:

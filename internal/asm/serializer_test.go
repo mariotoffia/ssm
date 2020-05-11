@@ -1,6 +1,7 @@
 package asm
 
 import (
+	"flag"
 	"reflect"
 	"testing"
 
@@ -15,8 +16,12 @@ import (
 // the secrets manager will complain and faild stating that it is subject
 // for deletion
 var stage string
+var scope string
 
 func init() {
+	testing.Init() // Need to do this in order for flag.Parse() to work
+	flag.StringVar(&scope, "scope", "", "Scope for test")
+	flag.Parse()
 
 	stage = testsupport.DefaultProvisionAsm()
 	log.Info().Msgf("Initializing ASM unittest with STAGE: %s", stage)
@@ -80,6 +85,10 @@ func TestUnmarshalStructWithSubStruct(t *testing.T) {
 }
 
 func TestMarshalSingleStringAsmStruct(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	test := testsupport.SingleStringAsmStruct{Name: "testing write"}
 	tp := reflect.ValueOf(&test)
 
@@ -121,6 +130,10 @@ func TestMarshalSingleStringAsmStruct(t *testing.T) {
 }
 
 func TestMarshalStructWithSubStruct(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	test := testsupport.StructWithSubStruct{}
 	test.AsmSub.Apa2 = 49
 	test.AsmSub.Nu2 = "fluffy flow"

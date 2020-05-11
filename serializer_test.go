@@ -224,6 +224,10 @@ func TestUnmarshalNonBackedVariableInStructReturnsAsMissingFullNameFieldAsm(t *t
 }
 
 func TestMarshalWihSingleStringStructPms(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	test := testsupport.SingleStringPmsStruct{Name: "stored from ssm"}
 
 	s := NewSsmSerializer(stage, "test-service")
@@ -242,6 +246,10 @@ func TestMarshalWihSingleStringStructPms(t *testing.T) {
 }
 
 func TestMarshalWihSingleStringStructAsm(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	set := testsupport.SingleStringAsmStruct{Name: "hobby bobby"}
 
 	s := NewSsmSerializer(stage, "test-service")
@@ -260,6 +268,10 @@ func TestMarshalWihSingleStringStructAsm(t *testing.T) {
 }
 
 func TestMarshalWihSingleNestedStructPms(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	set := testsupport.StructWithSubStruct{Name: "nisse hult"}
 	set.Sub.Apa = 88
 	set.Sub.Nu = "bubben här"
@@ -282,6 +294,10 @@ func TestMarshalWihSingleNestedStructPms(t *testing.T) {
 }
 
 func TestMarshalWihSingleNestedStructAsm(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	set := testsupport.StructWithSubStruct{}
 	set.AsmSub.Apa2 = 188
 	set.AsmSub.Nu2 = "bubben här igen"
@@ -304,6 +320,10 @@ func TestMarshalWihSingleNestedStructAsm(t *testing.T) {
 }
 
 func TestMarshalWihSingleNestedStructPmsAndAsm(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	set := testsupport.StructWithSubStruct{Name: "Thy name"}
 	set.Sub.Apa = 44
 	set.Sub.Nu = "hibby bibby"
@@ -330,6 +350,10 @@ func TestMarshalWihSingleNestedStructPmsAndAsm(t *testing.T) {
 }
 
 func TestMarshalWihSingleNestedStructFilteredPms(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	test := testsupport.StructWithSubStruct{Name: "hej o hå"}
 	test.Sub.Apa = 999
 	test.Sub.Nu = "johoo"
@@ -355,6 +379,10 @@ func TestMarshalWihSingleNestedStructFilteredPms(t *testing.T) {
 }
 
 func TestMarshalWihSingleNestedStructFilteredAsm(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
 	set := testsupport.StructWithSubStruct{}
 	set.AsmSub.Apa2 = 999
 	set.AsmSub.Nu2 = "japp"
