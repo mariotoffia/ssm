@@ -44,6 +44,31 @@ The above example uses keys from
 + /eap/test-service/db/batchsize (Parameter Store)
 + /eap/test-service/db/timeout (Parameter Store)
 
+If you'd rather like to have a _JSON_ string stored that gets unmarshalled, just decorate the struct property like this
+
+```golang
+// Two parameter store keys
+type MyDbServiceConfig struct {
+	Name       string `pms:"test, prefix=simple,tag1=nanna banna panna"`
+	Connection struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Timeout  int    `json:"timeout"`
+	} `pms:"bubbibobbo"`
+}
+
+// Single Secret Key
+type MyDbServiceConfigAsm struct {
+	Name       string
+	Connection struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Timeout  int    `json:"timeout"`
+	} `asm:"bubbibobbo, strkey=password"`
+}
+```
+Both examples above will use a single string in JSON format to unmarshal into individual properties (_User_, _Password_, _Timeout_).
+
 The counterpart `Marshal` in essence looks like this (see below for more information about _Marshal_)
 ```go
 ctx := MyContext { Caller: "kalle", 
