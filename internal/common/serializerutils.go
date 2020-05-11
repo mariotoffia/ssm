@@ -1,8 +1,10 @@
 package common
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/tagparser"
@@ -10,6 +12,36 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
+
+// RenderPrefix renders a prefix based on the inparam strings
+func RenderPrefix(prefix string, env string, svc string) string {
+	if strings.HasPrefix(env, "/") {
+		env = env[1:]
+	}
+	if strings.HasSuffix(env, "/") {
+		env = env[:1]
+	}
+	if strings.HasPrefix(svc, "/") {
+		svc = svc[1:]
+	}
+	if strings.HasSuffix(svc, "/") {
+		svc = svc[:1]
+	}
+	if prefix != "" && !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	if strings.HasSuffix(prefix, "/") {
+		prefix = prefix[:1]
+	}
+
+	if prefix == "" {
+		return fmt.Sprintf("/%s/%s", env, svc)
+	}
+	if svc == "" {
+		return fmt.Sprintf("/%s%s", env, prefix)
+	}
+	return fmt.Sprintf("/%s/%s%s", env, svc, prefix)
+}
 
 // NodesToParameterMap grabs all FullNames on nodes that do have tag set
 // in order to get data fom parameter store. Note that it chcks for the
