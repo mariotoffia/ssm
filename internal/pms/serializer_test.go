@@ -84,6 +84,33 @@ func TestUnmarshalWihSingleNestedStruct(t *testing.T) {
 	assert.Equal(t, "The name", res.Name)
 }
 
+func TestUnmarshalNestedJsonStructValue(t *testing.T) {
+	var test testsupport.MyDbServiceConfig
+	tp := reflect.ValueOf(&test)
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("pms", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	pmsr, err := New("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	_, err = pmsr.Get(node, support.NewFilters())
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "The name", test.Name)
+	assert.Equal(t, "gurka", test.Connection.User)
+	assert.Equal(t, 17, test.Connection.Timeout)
+	assert.Equal(t, "", test.Connection.Password)
+}
+
 func TestMarshalWihSingleStringStruct(t *testing.T) {
 	if scope != "rw" {
 		return

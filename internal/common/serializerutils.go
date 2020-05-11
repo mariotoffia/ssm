@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"reflect"
 	"strconv"
 
@@ -24,7 +25,8 @@ func SetStructValueFromString(node *parser.StructNode, name string, value string
 	log.Debug().Msgf("setting: %s (%s) val: %s", node.FqName, name, value)
 
 	switch node.Value.Kind() {
-
+	case reflect.Struct:
+		setSubStructViaJSONString(node, value)
 	case reflect.String:
 		node.Value.SetString(value)
 
@@ -32,6 +34,13 @@ func SetStructValueFromString(node *parser.StructNode, name string, value string
 		setStructIntValue(node.Value, name, value)
 	}
 
+	return nil
+}
+
+func setSubStructViaJSONString(node *parser.StructNode, value string) error {
+	if err := json.Unmarshal([]byte(value), node.Value.Addr().Interface()); err != nil {
+		return err
+	}
 	return nil
 }
 

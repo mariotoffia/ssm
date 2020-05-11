@@ -70,18 +70,21 @@ func (p *Parser) Parse(v reflect.Value) (*StructNode, error) {
 // multiple entries in the paths map will be created, one per tag.FullName.
 func NodesToParameterMap(node *StructNode,
 	paths map[string]*StructNode, filter *support.FieldFilters, tags []string) {
+
+	if filter.IsIncluded(node.FqName) {
+		for _, tagname := range tags {
+			if tag, ok := node.Tag[tagname]; ok {
+				if fullName := tag.GetFullName(); fullName != "" {
+					paths[tag.GetFullName()] = node
+				}
+			}
+		}
+	}
+
 	if node.HasChildren() {
 		children := node.Childs
 		for i := range node.Childs {
 			NodesToParameterMap(&children[i], paths, filter, tags)
-		}
-	} else {
-		if filter.IsIncluded(node.FqName) {
-			for _, tagname := range tags {
-				if tag, ok := node.Tag[tagname]; ok {
-					paths[tag.GetFullName()] = node
-				}
-			}
 		}
 	}
 }

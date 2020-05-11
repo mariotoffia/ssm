@@ -177,20 +177,16 @@ func (p *Serializer) handleInvalidRequestParameters(invalid []string,
 func (p *Serializer) populate(node *parser.StructNode, params map[string]ssm.Parameter) error {
 	node.EnsureInstance(false)
 
+	if tag, ok := node.Tag["pms"]; ok {
+		if val, ok := params[tag.GetFullName()]; ok {
+			common.SetStructValueFromString(node, *val.Name, *val.Value)
+		}
+	}
+
 	if node.HasChildren() {
 		for _, n := range node.Childs {
 			p.populate(&n, params)
 		}
-		return nil
-	}
-
-	if !node.HasTag("pms") {
-		log.Debug().Msgf("Node %s is not of pms type", node.FqName)
-		return nil
-	}
-
-	if val, ok := params[node.Tag["pms"].GetFullName()]; ok {
-		common.SetStructValueFromString(node, *val.Name, *val.Value)
 	}
 
 	return nil

@@ -45,10 +45,6 @@ type MyDbServiceConfig struct {
 	Connection struct {
 		User     string `json:"user"`
 		Password string `json:"password"`
+		Timeout  int    `json:"timeout"`
 	} `pms:"bubbibobbo"`
-
-	Stuff struct {
-		My    string `pms:"mustuff"`
-		Stuff string
-	}
 }
