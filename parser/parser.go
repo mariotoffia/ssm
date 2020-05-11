@@ -3,6 +3,7 @@ package parser
 import (
 	"reflect"
 
+	"github.com/mariotoffia/ssm.git/support"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )
@@ -60,6 +61,40 @@ func (p *Parser) Parse(v reflect.Value) (*StructNode, error) {
 
 	node.Childs = nodes
 	return node, nil
+}
+
+// NodesToParameterMap grabs all tag FullNames on nodes that do have atleast
+// one tag in the StructNode.Tag property. The tags full name is the associated
+// with the node itself. This is to gain a more accessable structure to seach
+// for nodes. Note if multiple tag FullName are present for same StructNode,
+// multiple entries in the paths map will be created, one per tag.FullName.
+func NodesToParameterMap(node *StructNode,
+	paths map[string]*StructNode, filter *support.FieldFilters, tags []string) {
+	if node.HasChildren() {
+		children := node.Childs
+		for i := range node.Childs {
+			NodesToParameterMap(&children[i], paths, filter, tags)
+		}
+	} else {
+		if filter.IsIncluded(node.FqName) {
+			for _, tagname := range tags {
+				if tag, ok := node.Tag[tagname]; ok {
+					paths[tag.GetFullName()] = node
+				}
+			}
+		}
+	}
+}
+
+// ExtractPaths extracts all keys in the paths map and adds
+// them to an array.
+func ExtractPaths(paths map[string]*StructNode) []string {
+	arr := make([]string, 0, len(paths))
+	for key := range paths {
+		arr = append(arr, key)
+	}
+
+	return arr
 }
 
 // DumpNode dumps info in the whole tree

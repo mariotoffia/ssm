@@ -7,33 +7,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-type structTag struct {
-	named  map[string]string
-	tags   map[string]string
-	fqname string
+type tagParser struct {
+	named []string
 }
 
-func (s *structTag) Named() map[string]string { return s.named }
-func (s *structTag) Tags() map[string]string  { return s.tags }
-func (s *structTag) Name() string             { return s.named["name"] }
-func (s *structTag) FullName() string         { return s.fqname }
-
-type tagParserImpl struct {
+// NewTagParser creates a new default tag parser
+func NewTagParser(named []string) TagParser {
+	return &tagParser{named: named}
 }
 
-func newTagParser() TagParser {
-	return &tagParserImpl{}
-}
-
-func (p *tagParserImpl) ParseTagString(tagstring string,
+func (p *tagParser) ParseTagString(tagstring string,
 	prefix string,
 	env string,
 	svc string) (StructTag, error) {
 
 	fmt.Printf("parsing %s\n", tagstring)
-	st := &structTag{
-		named: map[string]string{"prefix": RenderPrefix(prefix, env, svc)},
-		tags:  map[string]string{},
+	st := &StructTagImpl{
+		Named: map[string]string{"prefix": RenderPrefix(prefix, env, svc)},
+		Tags:  map[string]string{},
 	}
 
 	if len(tagstring) == 0 {
@@ -46,29 +37,42 @@ func (p *tagParserImpl) ParseTagString(tagstring string,
 		kv[0] = strings.ToLower(strings.TrimSpace(kv[0]))
 
 		if len(kv) == 1 {
-			if _, ok := st.named["name"]; ok {
+			if _, ok := st.Named["name"]; ok {
 				return nil, errors.Errorf("Multiple non key value in tag '%s'", tagstring)
 			}
-			kv[1] = kv[0]
-			kv[0] = "name"
+			tmp := kv[0]
+			kv = []string{"name", tmp}
 		}
 
 		switch kv[0] {
 		case "name":
-			st.named["name"] = kv[1]
+			st.Named["name"] = kv[1]
 		case "prefix":
-			st.named["prefix"] = RenderPrefix(kv[1], env, "")
+			st.Named["prefix"] = RenderPrefix(kv[1], env, "")
 			break
 		default:
-			st.tags[kv[0]] = kv[1]
+			if stringInSlice(kv[0], p.named) {
+				st.Named[kv[0]] = kv[1]
+			} else {
+				st.Tags[kv[0]] = kv[1]
+			}
 		}
 	}
 
-	if _, ok := st.named["name"]; ok {
-		st.fqname = RenderPrefix(prefix, env, svc) + "/" + st.named["name"]
+	if _, ok := st.Named["name"]; ok {
+		st.FullName = fmt.Sprintf("%s/%s", st.Named["prefix"], st.Named["name"])
 	}
 
 	return st, nil
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 // RenderPrefix renders a prefix based on the inparam strings

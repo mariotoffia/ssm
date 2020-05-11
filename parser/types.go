@@ -20,25 +20,47 @@ type TagParser interface {
 	ParseTagString(tagstring string, prefix string, env string, svc string) (StructTag, error)
 }
 
-// StructTag is a generic interface
+// StructTag is a interface struct
 // that represents a tag with parameters
 type StructTag interface {
+	// Named is the named parametres indexed by name
+	// If not key = value, instead just a value
+	// the key is "" and the value is the value.
+	GetNamed() map[string]string
+	// The other key = values where not special
+	// meaning
+	GetTags() map[string]string
+	// FullName is a fully qualified name separated
+	// with slashes. This is a combination of a
+	// prefix and the Named["name"] of this StructTag.
+	GetFullName() string
+}
+
+// StructTagImpl is a generic struct
+// that represents a tag with parameters
+type StructTagImpl struct {
 	// Gets the named parametres indexed by name
 	// If not key = value, instead just a value
 	// the key is "" and the value is the value.
-	Named() map[string]string
+	Named map[string]string
 	// The other key = values where not special
 	// meaning
-	Tags() map[string]string
-	// Name is a special tag that all TagParser needs
-	// to adhere to. Either a name=<name> or just a
-	// value will render this property.
-	Name() string
+	Tags map[string]string
 	// FullName is a fully qualified name separated
 	// with slashes. This is a combination of a
-	// prefix and the Name() of this StructTag.
-	FullName() string
+	// prefix and the Named["name"] of this StructTag.
+	FullName string
 }
+
+// Named gets the named parametres indexed by name. If not key = value,
+// instead just a value the key is "" and the value is the value.
+func (t *StructTagImpl) GetNamed() map[string]string { return t.Named }
+
+// Tags conatains all tags that do not have a special meaning.
+func (t *StructTagImpl) GetTags() map[string]string { return t.Tags }
+
+// FullName is the fully qualified name, i.e. prefix + name
+func (t *StructTagImpl) GetFullName() string { return t.FullName }
 
 // StructNode is a node representing a struct
 // or a field in a struct.
@@ -106,10 +128,11 @@ func (s *StructNode) ToString(children bool) string {
 
 	if len(s.Tag) > 0 {
 		for key, value := range s.Tag {
-			for nk, nv := range value.Named() {
+			str += fmt.Sprintf("fullname: %s ", value.GetFullName())
+			for nk, nv := range value.GetNamed() {
 				str += fmt.Sprintf("[%s, Named] %s = %s, ", key, nk, nv)
 			}
-			for nk, nv := range value.Tags() {
+			for nk, nv := range value.GetTags() {
 				str += fmt.Sprintf("[%s, Tags] %s = %s, ", key, nk, nv)
 			}
 		}
