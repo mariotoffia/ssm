@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/mariotoffia/ssm.git/internal/asm"
 	"github.com/mariotoffia/ssm.git/internal/pms"
-	"github.com/mariotoffia/ssm.git/internal/reflectparser"
+	"github.com/mariotoffia/ssm.git/parser"
 	"github.com/mariotoffia/ssm.git/report"
 	"github.com/mariotoffia/ssm.git/support"
 )
@@ -133,13 +133,17 @@ func (s *Serializer) ReportWithOpts(v interface{},
 	values bool) (*report.Report, string, error) {
 
 	tp := reflect.ValueOf(v)
-	node, err := reflectparser.New(s.env, s.service).Parse("", tp)
+	node, err := parser.New("test-service", "prod", "").
+		RegisterTagParser("asm", asm.NewTagParser()).
+		RegisterTagParser("pms", pms.NewTagParser()).
+		Parse(tp)
+
 	if err != nil {
 		return nil, "", err
 	}
 
 	reporter := report.NewWithTier(s.tier)
-	return reporter.RenderReport(&node, filter, true)
+	return reporter.RenderReport(node, filter, true)
 }
 
 func (s *Serializer) unmarshal(v interface{},
@@ -158,8 +162,15 @@ func (s *Serializer) unmarshal(v interface{},
 	}
 
 	tp := reflect.ValueOf(v)
-	node, err := reflectparser.New(s.env, s.service).Parse("", tp)
+	parser := parser.New(s.service, s.env, "")
 
+	if _, found := find(usage, UsePms); found {
+		parser.RegisterTagParser("pms", pms.NewTagParser())
+	} else if _, found := find(usage, UseAsm); found {
+		parser.RegisterTagParser("asm", asm.NewTagParser())
+	}
+
+	node, err := parser.Parse(tp)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +183,7 @@ func (s *Serializer) unmarshal(v interface{},
 			return nil, err
 		}
 
-		invalid, err = pmsr.Get(&node, filter)
+		invalid, err = pmsr.Get(node, filter)
 	}
 
 	if _, found := find(usage, UseAsm); found {
@@ -181,7 +192,7 @@ func (s *Serializer) unmarshal(v interface{},
 			return nil, err
 		}
 
-		invalid2, err := asmr.Get(&node, filter)
+		invalid2, err := asmr.Get(node, filter)
 		if invalid == nil && len(invalid2) > 0 {
 			invalid = map[string]support.FullNameField{}
 		}
@@ -211,7 +222,15 @@ func (s *Serializer) marshal(v interface{},
 	}
 
 	tp := reflect.ValueOf(v)
-	node, err := reflectparser.New(s.env, s.service).Parse("", tp)
+	parser := parser.New(s.service, s.env, "")
+
+	if _, found := find(usage, UsePms); found {
+		parser.RegisterTagParser("pms", pms.NewTagParser())
+	} else if _, found := find(usage, UseAsm); found {
+		parser.RegisterTagParser("asm", asm.NewTagParser())
+	}
+
+	node, err := parser.Parse(tp)
 
 	if err != nil {
 		return map[string]support.FullNameField{"": {Error: err}}
@@ -225,7 +244,7 @@ func (s *Serializer) marshal(v interface{},
 			return map[string]support.FullNameField{"": {Error: err}}
 		}
 
-		invalid = pmsr.Upsert(&node, filter)
+		invalid = pmsr.Upsert(node, filter)
 	}
 
 	if _, found := find(usage, UseAsm); found {
@@ -234,7 +253,7 @@ func (s *Serializer) marshal(v interface{},
 			return map[string]support.FullNameField{"": {Error: err}}
 		}
 
-		invalid2 := asmr.Upsert(&node, filter)
+		invalid2 := asmr.Upsert(node, filter)
 		if invalid == nil && len(invalid2) > 0 {
 			invalid = map[string]support.FullNameField{}
 		}
@@ -250,7 +269,8 @@ func (s *Serializer) marshal(v interface{},
 
 func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
 	if s.hasconfig {
-		return pms.NewFromConfig(s.config, s.service).SetTier(s.tier), nil
+		return pms.NewFromConfig(s.config, s.service).
+			SeDefaultTier(s.tier), nil
 	}
 
 	pmsr, err := pms.New(s.service)
@@ -258,7 +278,7 @@ func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
 		return nil, err
 	}
 
-	return pmsr.SetTier(s.tier), nil
+	return pmsr.SeDefaultTier(s.tier), nil
 }
 
 func (s *Serializer) getAndConfigureAsm() (*asm.Serializer, error) {

@@ -1,4 +1,4 @@
-package awspms
+package asm
 
 import (
 	"github.com/mariotoffia/ssm.git/parser"
@@ -17,8 +17,9 @@ func NewTagParser() parser.TagParser {
 			"prefix",
 			"keyid",
 			"description",
-			"pattern",
-			"overwrite",
+			"vid",
+			"vs",
+			"strkey",
 		}),
 	}
 }
@@ -34,10 +35,5 @@ func (p *tagParser) ParseTagString(tagstring string,
 	}
 
 	q := s.(*parser.StructTagImpl)
-
-	if _, ok := q.Named["overwrite"]; !ok {
-		q.Named["overwrite"] = "true"
-	}
-
-	return &PmsTagStruct{StructTagImpl: *q}, nil
+	return &AsmTagStruct{StructTagImpl: *q}, nil
 }

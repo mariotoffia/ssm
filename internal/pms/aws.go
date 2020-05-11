@@ -1,4 +1,4 @@
-package awspms
+package pms
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func (p *Serializer) toPutParameters(prms map[string]*parser.StructNode) []ssm.P
 				Tier:      tag.SsmTier(p.tier),
 				Tags:      tag.SsmTags(),
 				Type:      ParameterType(node),
-				Value:     aws.String(common.GetStringValueFromField2(node)),
+				Value:     aws.String(common.GetStringValueFromField(node)),
 			})
 		}
 	}

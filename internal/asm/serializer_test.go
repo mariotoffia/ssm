@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mariotoffia/ssm.git/internal/reflectparser"
 	"github.com/mariotoffia/ssm.git/internal/testsupport"
+	"github.com/mariotoffia/ssm.git/parser"
 	"github.com/mariotoffia/ssm.git/support"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +25,11 @@ func init() {
 func TestUnmarshalSingleStringAsmStruct(t *testing.T) {
 	var test testsupport.SingleStringAsmStruct
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tp)
+
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -35,20 +39,24 @@ func TestUnmarshalSingleStringAsmStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = asmr.Get(&node, support.NewFilters())
+	_, err = asmr.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
 	assert.Equal(t, "The name", test.Name)
-	res := node.Value().Interface().(testsupport.SingleStringAsmStruct)
+	res := node.Value.Interface().(testsupport.SingleStringAsmStruct)
 	assert.Equal(t, "The name", res.Name)
 }
 
 func TestUnmarshalStructWithSubStruct(t *testing.T) {
 	var test testsupport.StructWithSubStruct
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tp)
+
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -58,7 +66,7 @@ func TestUnmarshalStructWithSubStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = asmr.Get(&node, support.NewFilters())
+	_, err = asmr.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -66,7 +74,7 @@ func TestUnmarshalStructWithSubStruct(t *testing.T) {
 	assert.Equal(t, 43, test.AsmSub.Apa2)
 	assert.Equal(t, "test svc name", test.AsmSub.Nu2)
 
-	res := node.Value().Interface().(testsupport.StructWithSubStruct)
+	res := node.Value.Interface().(testsupport.StructWithSubStruct)
 	assert.Equal(t, 43, res.AsmSub.Apa2)
 	assert.Equal(t, "test svc name", res.AsmSub.Nu2)
 }
@@ -74,7 +82,11 @@ func TestUnmarshalStructWithSubStruct(t *testing.T) {
 func TestMarshalSingleStringAsmStruct(t *testing.T) {
 	test := testsupport.SingleStringAsmStruct{Name: "testing write"}
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tp)
+
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -84,19 +96,23 @@ func TestMarshalSingleStringAsmStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	result := asmr.Upsert(&node, support.NewFilters())
+	result := asmr.Upsert(node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, err)
 	}
 
 	var testr testsupport.SingleStringAsmStruct
 	tpr := reflect.ValueOf(&testr)
-	node, err = reflectparser.New(stage, "test-service").Parse("", tpr)
+
+	node, err = parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tpr)
+
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = asmr.Get(&node, support.NewFilters())
+	_, err = asmr.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -110,7 +126,10 @@ func TestMarshalStructWithSubStruct(t *testing.T) {
 	test.AsmSub.Nu2 = "fluffy flow"
 
 	tp := reflect.ValueOf(&test)
-	node, err := reflectparser.New(stage, "test-service").Parse("", tp)
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tp)
+
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -120,19 +139,23 @@ func TestMarshalStructWithSubStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	result := asmr.Upsert(&node, support.NewFilters())
+	result := asmr.Upsert(node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, result)
 	}
 
 	var testr testsupport.StructWithSubStruct
 	tpr := reflect.ValueOf(&testr)
-	node, err = reflectparser.New(stage, "test-service").Parse("", tpr)
+
+	node, err = parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tpr)
+
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = asmr.Get(&node, support.NewFilters())
+	_, err = asmr.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}

@@ -1,4 +1,4 @@
-package awsasm
+package asm
 
 import (
 	"strings"

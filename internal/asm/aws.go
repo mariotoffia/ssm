@@ -1,4 +1,4 @@
-package awsasm
+package asm
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func genCreateSecretParam(node *parser.StructNode) secretsmanager.CreateSecretIn
 			Name:               aws.String(tag.GetFullName()),
 			Description:        aws.String(tag.Description()),
 			KmsKeyId:           keyid,
-			SecretString:       aws.String(common.GetStringValueFromField2(node)),
+			SecretString:       aws.String(common.GetStringValueFromField(node)),
 			Tags:               tags,
 		}
 	}

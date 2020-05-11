@@ -1,4 +1,4 @@
-package awspms
+package pms
 
 import (
 	"reflect"

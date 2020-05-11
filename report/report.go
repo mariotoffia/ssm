@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/mariotoffia/ssm.git/internal/asm"
 	"github.com/mariotoffia/ssm.git/internal/common"
-	"github.com/mariotoffia/ssm.git/internal/reflectparser"
+	"github.com/mariotoffia/ssm.git/internal/pms"
 	"github.com/mariotoffia/ssm.git/internal/tagparser"
+	"github.com/mariotoffia/ssm.git/parser"
 	"github.com/mariotoffia/ssm.git/support"
+	"github.com/rs/zerolog/log"
 )
 
 // ParameterType specifies if a parameter is a secrets
@@ -78,7 +81,7 @@ func NewWithTier(tier ssm.ParameterTier) *Reporter {
 }
 
 // RenderReport renders a JSON report based on the node tree and filters
-func (r *Reporter) RenderReport(node *reflectparser.SsmNode,
+func (r *Reporter) RenderReport(node *parser.StructNode,
 	filter *support.FieldFilters, value bool) (*Report, string, error) {
 
 	params := []Parameter{}
@@ -90,56 +93,64 @@ func (r *Reporter) RenderReport(node *reflectparser.SsmNode,
 	return report, string(buff), err
 }
 
-func (r *Reporter) renderReport(node *reflectparser.SsmNode,
+func (r *Reporter) renderReport(node *parser.StructNode,
 	filter *support.FieldFilters, params []Parameter, value bool) []Parameter {
 
 	if node.HasChildren() {
-		children := node.Children()
-		for i := range node.Children() {
+		children := node.Childs
+		for i := range node.Childs {
 			params = r.renderReport(&children[i], filter, params, value)
 		}
 	} else {
-		if filter.IsIncluded(node.FqName()) {
+		if filter.IsIncluded(node.FqName) {
+			var prm Parameter
 
-			var keyid string
-			if node.Tag().IsLocalKey() {
-				// TODO: need to resolve it to an ARN
-			} else if !node.Tag().DefaultAccountKey() {
-				// Key is ARN
-				keyid = node.Tag().GetKeyName()
-			}
+			if pmstag, ok := pms.ToPmsTag(node); ok {
+				prm := Parameter{
+					Name:        pmstag.GetFullName(),
+					Description: pmstag.Description(),
+					Tags:        pmstag.GetTags(),
+					Type:        ParameterStore,
+				}
 
-			prm := Parameter{
-				Name:        node.Tag().FullName(),
-				Description: node.Tag().Description(),
-				Tags:        node.Tag().Tags(),
-				KeyID:       keyid,
-			}
+				prm.Details = PmsParameterDetails{
+					Pattern: pmstag.Pattern(),
+					Tier:    pmstag.SsmTier(r.tier),
+				}
 
-			if node.Tag().SsmType() == tagparser.Pms {
-				if tag, ok := node.Tag().(*tagparser.PmsTag); ok {
+				if pmstag.IsLocalKey() {
+					// TODO: need to resolve it to an ARN
+				} else if !pmstag.DefaultAccountKey() {
+					// Key is ARN
+					prm.KeyID = pmstag.GetKeyName()
+				}
 
-					prm.Details = PmsParameterDetails{
-						Pattern: tag.Pattern(),
-						Tier:    r.getTierFromTag(tag),
-					}
+				if pmstag.Secure() {
+					prm.ValueType = "SecureString"
+				} else {
+					prm.ValueType = "String"
+				}
+			} else if asmtag, ok := asm.ToAsmTag(node); ok {
+				prm := Parameter{
+					Name:        asmtag.GetFullName(),
+					Description: asmtag.Description(),
+					Tags:        asmtag.GetTags(),
+					Type:        ParameterStore,
+				}
+				prm.Type = SecretsManager
+				prm.ValueType = "SecureString"
+				prm.Details = AsmParameterDetails{
+					StringKey: asmtag.StringKey(),
+				}
 
-					prm.Type = ParameterStore
-
-					if tag.Secure() {
-						prm.ValueType = "SecureString"
-					} else {
-						prm.ValueType = "String"
-					}
+				if pmstag.IsLocalKey() {
+					// TODO: need to resolve it to an ARN
+				} else if !pmstag.DefaultAccountKey() {
+					// Key is ARN
+					prm.KeyID = pmstag.GetKeyName()
 				}
 			} else {
-				if tag, ok := node.Tag().(*tagparser.AsmTag); ok {
-					prm.Type = SecretsManager
-					prm.ValueType = "SecureString"
-					prm.Details = AsmParameterDetails{
-						StringKey: tag.StringKey(),
-					}
-				}
+				log.Debug().Msgf("node %s has not pms or asm tag", node.FqName)
 			}
 
 			if value {
