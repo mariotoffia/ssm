@@ -41,6 +41,9 @@ func Secrets(stage string) []secretsmanager.CreateSecretInput {
 		{Name: aws.String(fmt.Sprintf("/%s/test-service/asmsub/myname", stage)),
 			SecretString:       aws.String("test svc name"),
 			ClientRequestToken: aws.String(uuid.New().String())},
+		{Name: aws.String(fmt.Sprintf("/%s/test-service/bubbibobbo", stage)),
+			SecretString:       aws.String(`{"user":"gurkaburka","timeout":998}`),
+			ClientRequestToken: aws.String(uuid.New().String())},
 	}
 }
 

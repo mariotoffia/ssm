@@ -179,7 +179,9 @@ func (p *Serializer) populate(node *parser.StructNode, params map[string]ssm.Par
 
 	if tag, ok := node.Tag["pms"]; ok {
 		if val, ok := params[tag.GetFullName()]; ok {
-			common.SetStructValueFromString(node, *val.Name, *val.Value)
+			if tag.GetFullName() != "" {
+				common.SetStructValueFromString(node, *val.Name, *val.Value)
+			}
 		}
 	}
 

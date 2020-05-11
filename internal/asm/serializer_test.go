@@ -84,6 +84,33 @@ func TestUnmarshalStructWithSubStruct(t *testing.T) {
 	assert.Equal(t, "test svc name", res.AsmSub.Nu2)
 }
 
+func TestUnmarshalSubstructAsJsonStringPropety(t *testing.T) {
+	var test testsupport.MyDbServiceConfigAsm
+	tp := reflect.ValueOf(&test)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	asmr, err := New("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	_, err = asmr.Get(node, support.NewFilters())
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "gurkaburka", test.Connection.User)
+	assert.Equal(t, 998, test.Connection.Timeout)
+	assert.Equal(t, "", test.Connection.Password)
+}
+
 func TestMarshalSingleStringAsmStruct(t *testing.T) {
 	if scope != "rw" {
 		return

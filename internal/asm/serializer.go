@@ -125,14 +125,18 @@ func (p *Serializer) Upsert(node *parser.StructNode,
 func populate(node *parser.StructNode, params map[string]*secretsmanager.GetSecretValueOutput) {
 	node.EnsureInstance(false)
 
+	if val, ok := params[node.FqName]; ok {
+		if tag, ok := node.Tag["asm"]; ok {
+			if tag.GetFullName() != "" {
+				common.SetStructValueFromString(node, *val.Name, *val.SecretString)
+			}
+		}
+	}
+
 	if node.HasChildren() {
 		for _, n := range node.Childs {
 			populate(&n, params)
 		}
 		return
-	}
-
-	if val, ok := params[node.FqName]; ok {
-		common.SetStructValueFromString(node, *val.Name, *val.SecretString)
 	}
 }

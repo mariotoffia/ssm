@@ -48,3 +48,13 @@ type MyDbServiceConfig struct {
 		Timeout  int    `json:"timeout"`
 	} `pms:"bubbibobbo"`
 }
+
+// MyDbServiceConfigAsm is a fake test struct
+type MyDbServiceConfigAsm struct {
+	Name       string
+	Connection struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Timeout  int    `json:"timeout"`
+	} `asm:"bubbibobbo, strkey=password"`
+}
