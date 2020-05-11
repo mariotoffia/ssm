@@ -38,3 +38,17 @@ type StructPmsWithNonExistantVariable struct {
 		Missing2 string `asm:"gonemissing"`
 	}
 }
+
+// MyDbServiceConfig is a fake test struct
+type MyDbServiceConfig struct {
+	Name       string `pms:"test, prefix=simple,tag1=nanna banna panna"`
+	Connection struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+	} `pms:"bubbibobbo"`
+
+	Stuff struct {
+		My    string `pms:"mustuff"`
+		Stuff string
+	}
+}

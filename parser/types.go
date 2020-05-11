@@ -126,6 +126,7 @@ func (s *StructNode) ToString(children bool) string {
 		owner = s.Field.Name
 	}
 
+	str += fmt.Sprintf("[fqn = %s]: ", s.FqName)
 	if len(s.Tag) > 0 {
 		for key, value := range s.Tag {
 			str += fmt.Sprintf("fullname: %s ", value.GetFullName())

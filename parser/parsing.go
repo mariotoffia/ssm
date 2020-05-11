@@ -34,7 +34,7 @@ func (p *Parser) handleKind(nav string, owner *StructNode, t reflect.Type, fv re
 
 	switch fv.Kind() {
 	case reflect.Struct:
-		node, err = p.parseStruct(renderFqName(nav, ft), owner, t, fv, ft)
+		node, err = p.parseStruct(nav, owner, t, fv, ft)
 	case reflect.Ptr:
 		tv := reflect.Indirect(fv)
 		if tv.IsValid() {
@@ -76,9 +76,22 @@ func (p *Parser) parseField(nav string, owner *StructNode, t reflect.Type, fv re
 
 func (p *Parser) parseStruct(nav string, owner *StructNode, t reflect.Type, fv reflect.Value,
 	ft reflect.StructField) (*StructNode, error) {
-	node := StructNode{FqName: nav, Field: ft, Owner: owner, Type: t, Value: fv}
-	nodes, err := p.parse(nav, &node, fv)
 
+	tag, err := p.parseTag(nav, ft)
+	if err != nil {
+		return nil, errors.Errorf("The config %s could not parse field %s", t.Name(), ft.Name)
+	}
+
+	node := &StructNode{
+		FqName: renderFqName(nav, ft),
+		Field:  ft,
+		Owner:  owner,
+		Type:   t,
+		Value:  fv,
+		Tag:    tag,
+	}
+
+	nodes, err := p.parse(renderFqName(nav, ft), node, fv)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +100,7 @@ func (p *Parser) parseStruct(nav string, owner *StructNode, t reflect.Type, fv r
 		node.Childs = nodes
 	}
 
-	return &node, nil
+	return node, nil
 }
 
 func (p *Parser) parseTag(nav string, ft reflect.StructField) (map[string]StructTag, error) {

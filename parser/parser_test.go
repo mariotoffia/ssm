@@ -21,3 +21,17 @@ func TestSingleStringStruct(t *testing.T) {
 
 	DumpNode(node)
 }
+
+func TestNestedPropertyJsonExpanded(t *testing.T) {
+	var test testsupport.MyDbServiceConfig
+	tp := reflect.ValueOf(&test)
+	node, err := New("test-service", "dev", "").
+		RegisterTagParser("pms", NewTagParser([]string{})).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	DumpNode(node)
+}
