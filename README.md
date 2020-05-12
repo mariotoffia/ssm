@@ -44,6 +44,19 @@ The above example uses keys from
 + /eap/test-service/db/batchsize (Parameter Store)
 + /eap/test-service/db/timeout (Parameter Store)
 
+The counterpart `Marshal` in essence looks like this (see below for more information about _Marshal_)
+```go
+ctx := MyContext { Caller: "kalle", 
+// initalize the struct and substruct ...
+}
+
+s := ssm.NewSsmSerializer("eap", "test-service")
+err := s.Marshal(&ctx)
+if len(err) > 0
+  panic()
+}
+```
+
 If you'd rather like to have a _JSON_ string stored that gets unmarshalled, just decorate the struct property like this
 
 ```golang
@@ -67,20 +80,7 @@ type MyDbServiceConfigAsm struct {
 	} `asm:"bubbibobbo, strkey=password"`
 }
 ```
-Both examples above will use a single string in JSON format to unmarshal into individual properties (_User_, _Password_, _Timeout_).
-
-The counterpart `Marshal` in essence looks like this (see below for more information about _Marshal_)
-```go
-ctx := MyContext { Caller: "kalle", 
-// initalize the struct and substruct ...
-}
-
-s := ssm.NewSsmSerializer("eap", "test-service")
-err := s.Marshal(&ctx)
-if len(err) > 0
-  panic()
-}
-```
+Both examples above will use a single string in JSON format to `Marshal`/`Unmarshal` into individual properties (_User_, _Password_, _Timeout_). The use of `strkey=password` is only used for instructing the CDK Construct renderer to use a template driven (Cloud Formation generates the password when provisioned).
 
 You may use reporting and generation of CDK artifacts for Cloud Formation deployments. The reporting and CDK class generation is customizeable.
 

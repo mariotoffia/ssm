@@ -203,3 +203,53 @@ func TestMarshalStructWithSubStruct(t *testing.T) {
 	assert.Equal(t, 49, testr.AsmSub.Apa2)
 	assert.Equal(t, "fluffy flow", testr.AsmSub.Nu2)
 }
+
+func TestMarshalSubStructAsJSON(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
+	test := testsupport.MyDbServiceConfigAsm{}
+	test.Connection.User = "gördis"
+	test.Connection.Timeout = 1088
+	test.Connection.Password = "åaaäs2##!!äöå!#dfmklvmlkBBCH2¤"
+	tp := reflect.ValueOf(&test)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	asmr, err := New("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	result := asmr.Upsert(node, support.NewFilters())
+	if len(result) > 0 {
+		assert.Equal(t, nil, err)
+	}
+
+	var testr testsupport.MyDbServiceConfigAsm
+	tpr := reflect.ValueOf(&testr)
+
+	node, err = parser.New("test-service", stage, "").
+		RegisterTagParser("asm", NewTagParser()).
+		Parse(tpr)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	_, err = asmr.Get(node, support.NewFilters())
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "gördis", testr.Connection.User)
+	assert.Equal(t, 1088, testr.Connection.Timeout)
+	assert.Equal(t, "åaaäs2##!!äöå!#dfmklvmlkBBCH2¤", testr.Connection.Password)
+}
