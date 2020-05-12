@@ -137,11 +137,8 @@ func (r *Reporter) handleAsmTag(asmtag *asm.AsmTagStruct) *Parameter {
 	}
 	prm.Type = SecretsManager
 	prm.ValueType = "SecureString"
-
-	if strKey := asmtag.StringKey(); strKey != "" {
-		prm.Details = AsmParameterDetails{
-			StringKey: strKey,
-		}
+	prm.Details = AsmParameterDetails{
+		StringKey: asmtag.StringKey(),
 	}
 
 	if asmtag.IsLocalKey() {
