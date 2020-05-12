@@ -35,7 +35,7 @@ func TestReportSingleAsmStringNilStruct(t *testing.T) {
 
 	assert.Equal(t, 1, len(report.Parameters))
 	assert.Contains(t, buff, "\"fqname\": \"/prod/simple/test\",")
-	assert.Contains(t, buff, "\"details\": null")
+	assert.Contains(t, buff, `"strkey": ""`)
 	assert.Contains(t, buff, "\"type\": \"secrets-manager\"")
 	assert.Contains(t, buff, "\"value\": \"\"")
 }
@@ -60,7 +60,7 @@ func TestReportSingleAsmStringValueStruct(t *testing.T) {
 
 	assert.Equal(t, 1, len(report.Parameters))
 	assert.Contains(t, buff, "\"fqname\": \"/prod/simple/test\",")
-	assert.Contains(t, buff, "\"details\": null")
+	assert.Contains(t, buff, `"strkey": ""`)
 	assert.Contains(t, buff, "\"type\": \"secrets-manager\"")
 	assert.Contains(t, buff, "\"value\": \"kalle kula\"")
 }
