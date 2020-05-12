@@ -519,6 +519,27 @@ if len(err) > 0
   panic()
 }
 ```
+
+## Tier (Parameter Store)
+By default the serializer uses the tier specified when constructed (if not set standard is always used). It is possible to specify on field basis the tier to use (this is when creating / putting) the paramter to parameter store. When using e.g. advanced tier you may use policies and larger strings (as time of writing 8kb instead of 4kb strings).
+
+```golang
+type MyContextPostgresSQL struct {
+	DbCtx    support.SecretsManagerRDSPostgreSQLRotationSingleUser `asm:"dbctx, strkey=password"`
+	Settings struct {
+		BatchSize int    `json:"batchsize"`
+		Signer    string `json:"signer,omitempty"`
+	} `pms:"settings, tier=adv"`
+}
+```
+This above sample shows that the _JSON_ payload for setting is stored using the advanced tier for this specific parameter.
+
+You have the following tier to specify using the _tier_ tag name:
++ std - Default Tier
++ adv - Advanced Tier
++ eval - Intelligent tiering - AWS evaluate and determines the type of tier to use for parameter.
+
+
 # Reporting
 Please see the cdk README.md for details around reporting.
 

@@ -19,6 +19,7 @@ func NewTagParser() parser.TagParser {
 			"description",
 			"pattern",
 			"overwrite",
+			"tier",
 		}),
 	}
 }
