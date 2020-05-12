@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/mariotoffia/ssm.git/internal/asm"
+	"github.com/mariotoffia/ssm.git/internal/pms"
 	"github.com/mariotoffia/ssm.git/internal/testsupport"
 	"github.com/mariotoffia/ssm.git/parser"
 	"github.com/mariotoffia/ssm.git/support"
@@ -115,5 +116,35 @@ func TestReportSingleAsmSecretSubJsonNilStruct(t *testing.T) {
 	assert.Contains(t, buff, `"value": "{\"user\":\"\",\"timeout\":0}"`)
 	assert.Contains(t, buff, `"strkey": "password"`)
 	assert.Contains(t, buff, `"fqname": "/prod/test-service/bubbibobbo"`)
+	fmt.Println(buff)
+}
+
+func TestReportPostgresSQLTemplateStruct(t *testing.T) {
+	test := testsupport.MyContextPostgresSQL{}
+	test.DbCtx.DbName = "mydb"
+	test.DbCtx.Engine = support.PostgresDBEngine
+	test.DbCtx.Host = "pgsql-17.toffia.se"
+	test.DbCtx.Username = "gördis"
+	test.Settings.BatchSize = 77
+	test.Settings.Signer = "mto"
+
+	tp := reflect.ValueOf(&test)
+
+	node, err := parser.New("test-service", "prod", "").
+		RegisterTagParser("asm", asm.NewTagParser()).
+		RegisterTagParser("pms", pms.NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	reporter := NewWithTier(ssm.ParameterTierStandard)
+	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, 2, len(report.Parameters))
 	fmt.Println(buff)
 }

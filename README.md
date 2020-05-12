@@ -88,7 +88,8 @@ You may use reporting and generation of CDK artifacts for Cloud Formation deploy
 s := NewSsmSerializer("dev", "test-service")
 objs, json, err := s.ReportWithOpts(&ctx, NoFilter, true)
 ```
-The above will cereate a _JSON_ report format that can be used to generate CDK classes. Example output
+The above will cereate a _JSON_ report format that can be used to generate CDK classes. Example output for [ssm-cdk-generator](https://www.npmjs.com/package/ssm-cdk-generator)
+
 ```typescript
 import * as cdk from '@aws-cdk/core';
     import * as asm from '@aws-cdk/aws-secretsmanager';
@@ -130,6 +131,47 @@ import * as cdk from '@aws-cdk/core';
       }
     }
 ```
+There are a few templates for _Secrets Manager_ included in the library to make it more simpler
+to handle standard credentials to e.g. PostgresSQL
+```go
+type MyServiceContext struct {
+	DbCtx    support.SecretsManagerRDSPostgreSQLRotationSingleUser `asm:"dbctx, strkey=password"`
+	Settings struct {
+		BatchSize int    `json:"batchsize"`
+		Signer    string `json:"signer,omitempty"`
+	} `pms:"settings"`
+}
+```
+If this is reported it may output something like this
+```json
+{
+  "type": "secrets-manager",
+  "fqname": "/prod/test-service/dbctx",
+  "keyid": "",
+  "description": "",
+  "tags": {},
+  "details": {
+    "strkey": "password"
+  },
+  "value": "{\"engine\":\"postgres\",\"host\":\"pgsql-17.toffia.se\",\"username\":\"gördis\",\"dbname\":\"mydb\"}",
+  "valuetype": "SecureString"
+},
+{
+  "type": "parameter-store",
+  "fqname": "/prod/test-service/settings",
+  "keyid": "",
+  "description": "",
+  "tags": {},
+  "details": {
+    "pattern": "",
+    "tier": "Standard"
+  },
+  "value": "{\"batchsize\":77,\"signer\":\"mto\"}",
+  "valuetype": "String"
+}
+```
+
+This may then be used to generate CDK artifacts (as above) using [ssm-cdk-generator](https://www.npmjs.com/package/ssm-cdk-generator) to generate passwords and the secrets using Cloud Formation deployment.
 
 # Standard Usage
 

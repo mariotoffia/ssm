@@ -1,5 +1,7 @@
 package testsupport
 
+import "github.com/mariotoffia/ssm.git/support"
+
 // SingleStringPmsStruct with single string
 type SingleStringPmsStruct struct {
 	Name string `pms:"test, prefix=simple,tag1=nanna banna panna"`
@@ -57,4 +59,13 @@ type MyDbServiceConfigAsm struct {
 		Password string `json:"password,omitempty"`
 		Timeout  int    `json:"timeout"`
 	} `asm:"bubbibobbo, strkey=password"`
+}
+
+// MyContextPostgresSQL demo context
+type MyContextPostgresSQL struct {
+	DbCtx    support.SecretsManagerRDSPostgreSQLRotationSingleUser `asm:"dbctx, strkey=password"`
+	Settings struct {
+		BatchSize int    `json:"batchsize"`
+		Signer    string `json:"signer,omitempty"`
+	} `pms:"settings"`
 }
