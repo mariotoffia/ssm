@@ -44,7 +44,7 @@ type MyDbServiceConfig struct {
 	Name       string `pms:"test, prefix=simple,tag1=nanna banna panna"`
 	Connection struct {
 		User     string `json:"user"`
-		Password string `json:"password"`
+		Password string `json:"password,omitempty"`
 		Timeout  int    `json:"timeout"`
 	} `pms:"bubbibobbo"`
 }
@@ -54,7 +54,7 @@ type MyDbServiceConfigAsm struct {
 	Name       string
 	Connection struct {
 		User     string `json:"user"`
-		Password string `json:"password"`
+		Password string `json:"password,omitempty"`
 		Timeout  int    `json:"timeout"`
 	} `asm:"bubbibobbo, strkey=password"`
 }

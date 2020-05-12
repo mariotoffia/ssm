@@ -112,7 +112,7 @@ func TestReportSingleAsmSecretSubJsonNilStruct(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(report.Parameters))
-	assert.Contains(t, buff, `"value": "{\"user\":\"\",\"password\":\"\",\"timeout\":0}"`)
+	assert.Contains(t, buff, `"value": "{\"user\":\"\",\"timeout\":0}"`)
 	assert.Contains(t, buff, `"strkey": "password"`)
 	assert.Contains(t, buff, `"fqname": "/prod/test-service/bubbibobbo"`)
 	fmt.Println(buff)
