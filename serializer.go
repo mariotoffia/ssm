@@ -44,19 +44,37 @@ type Serializer struct {
 	env       string
 	tier      ssm.ParameterTier
 	usage     []Usage
+	parser    map[string]parser.TagParser
 }
 
 // NewSsmSerializer creates a new serializer with default aws.Config
 func NewSsmSerializer(env string, service string) *Serializer {
-	return &Serializer{env: env, service: service, tier: ssm.ParameterTierStandard}
+	return &Serializer{
+		env:     env,
+		service: service,
+		tier:    ssm.ParameterTierStandard,
+		parser:  map[string]parser.TagParser{},
+	}
 }
 
 // NewSsmSerializerFromConfig creates a new serializer using the inparam config instead
 // of the default config.
 func NewSsmSerializerFromConfig(env string, service string, config aws.Config) *Serializer {
-	return &Serializer{env: env, service: service,
-		tier: ssm.ParameterTierStandard, config: config,
-		hasconfig: true}
+	return &Serializer{
+		env:       env,
+		service:   service,
+		tier:      ssm.ParameterTierStandard,
+		config:    config,
+		hasconfig: true,
+		parser:    map[string]parser.TagParser{},
+	}
+}
+
+// UseTagParser registers a custom tag parser to participate in the reflective
+// parsing when Marshal or Unmarshal operations.
+func (s *Serializer) UseTagParser(tag string, parser parser.TagParser) *Serializer {
+	s.parser[tag] = parser
+	return s
 }
 
 // SetTier allows for change the tier. By default Serializer uses
@@ -71,7 +89,8 @@ func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
 // with data from the Systems Manager. It returns a map containg fields that
 // where requested but not set.
 func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField, error) {
-	return s.unmarshal(v, nil, nil)
+	inv, _, err := s.unmarshal(v, nil, nil)
+	return inv, err
 }
 
 // UnmarshalWithOpts creates the inparam struct pointer (and sub structs as well).
@@ -85,6 +104,15 @@ func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField,
 // default the serializer will use all supported tags.
 func (s *Serializer) UnmarshalWithOpts(v interface{},
 	filter *support.FieldFilters, usage []Usage) (map[string]support.FullNameField, error) {
+	inv, _, err := s.unmarshal(v, filter, usage)
+	return inv, err
+}
+
+// AdvUnmarshalWithOpts is the same function as the UnmarshalWithOpts but is
+// also returns the tree of parsed node to be post-processed.
+func (s *Serializer) AdvUnmarshalWithOpts(v interface{},
+	filter *support.FieldFilters,
+	usage []Usage) (map[string]support.FullNameField, *parser.StructNode, error) {
 	return s.unmarshal(v, filter, usage)
 }
 
@@ -95,7 +123,8 @@ func (s *Serializer) UnmarshalWithOpts(v interface{},
 // Unmarshal where it is never filled in). If any non field related error occurs an empty
 // support.FullNameField is returned with only the Error field populated.
 func (s *Serializer) Marshal(v interface{}) map[string]support.FullNameField {
-	return s.marshal(v, nil, nil)
+	inv, _ := s.marshal(v, nil, nil)
+	return inv
 }
 
 // MarshalWithOpts serializes the struct and sub-structs onto parameter store and AWS secrets
@@ -110,6 +139,16 @@ func (s *Serializer) Marshal(v interface{}) map[string]support.FullNameField {
 // possible to explicitly enable / disable PMS or ASM and hence gain a little optimization.
 func (s *Serializer) MarshalWithOpts(v interface{},
 	filter *support.FieldFilters, usage []Usage) map[string]support.FullNameField {
+	inv, _ := s.marshal(v, filter, usage)
+	return inv
+}
+
+// AdvMarshalWithOpts is exactly as MarshalWithOpts but it also returns
+// the parsed node tree. It is possible to register your own tag parsers using
+// UseTagParser(name, tagparser) method.
+func (s *Serializer) AdvMarshalWithOpts(v interface{},
+	filter *support.FieldFilters,
+	usage []Usage) (map[string]support.FullNameField, *parser.StructNode) {
 	return s.marshal(v, filter, usage)
 }
 
@@ -147,7 +186,8 @@ func (s *Serializer) ReportWithOpts(v interface{},
 }
 
 func (s *Serializer) unmarshal(v interface{},
-	filter *support.FieldFilters, usage []Usage) (map[string]support.FullNameField, error) {
+	filter *support.FieldFilters,
+	usage []Usage) (map[string]support.FullNameField, *parser.StructNode, error) {
 
 	if len(usage) == 0 {
 		if len(s.usage) > 0 {
@@ -171,9 +211,13 @@ func (s *Serializer) unmarshal(v interface{},
 		prs.RegisterTagParser("asm", asm.NewTagParser())
 	}
 
+	for n, v := range s.parser {
+		prs.RegisterTagParser(n, v)
+	}
+
 	node, err := prs.Parse(tp)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var invalid map[string]support.FullNameField
@@ -181,7 +225,7 @@ func (s *Serializer) unmarshal(v interface{},
 	if _, found := find(usage, UsePms); found {
 		pmsr, err := s.getAndConfigurePms()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		invalid, err = pmsr.Get(node, filter)
@@ -190,7 +234,7 @@ func (s *Serializer) unmarshal(v interface{},
 	if _, found := find(usage, UseAsm); found {
 		asmr, err := s.getAndConfigureAsm()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		invalid2, err := asmr.Get(node, filter)
@@ -204,11 +248,12 @@ func (s *Serializer) unmarshal(v interface{},
 		}
 	}
 
-	return invalid, err
+	return invalid, node, err
 }
 
 func (s *Serializer) marshal(v interface{},
-	filter *support.FieldFilters, usage []Usage) map[string]support.FullNameField {
+	filter *support.FieldFilters,
+	usage []Usage) (map[string]support.FullNameField, *parser.StructNode) {
 
 	if len(usage) == 0 {
 		if len(s.usage) > 0 {
@@ -232,10 +277,14 @@ func (s *Serializer) marshal(v interface{},
 		parser.RegisterTagParser("asm", asm.NewTagParser())
 	}
 
+	for n, v := range s.parser {
+		parser.RegisterTagParser(n, v)
+	}
+
 	node, err := parser.Parse(tp)
 
 	if err != nil {
-		return map[string]support.FullNameField{"": {Error: err}}
+		return map[string]support.FullNameField{"": {Error: err}}, nil
 	}
 
 	var invalid map[string]support.FullNameField
@@ -243,7 +292,7 @@ func (s *Serializer) marshal(v interface{},
 	if _, found := find(usage, UsePms); found {
 		pmsr, err := s.getAndConfigurePms()
 		if err != nil {
-			return map[string]support.FullNameField{"": {Error: err}}
+			return map[string]support.FullNameField{"": {Error: err}}, nil
 		}
 
 		invalid = pmsr.Upsert(node, filter)
@@ -252,7 +301,7 @@ func (s *Serializer) marshal(v interface{},
 	if _, found := find(usage, UseAsm); found {
 		asmr, err := s.getAndConfigureAsm()
 		if err != nil {
-			return map[string]support.FullNameField{"": {Error: err}}
+			return map[string]support.FullNameField{"": {Error: err}}, nil
 		}
 
 		invalid2 := asmr.Upsert(node, filter)
@@ -266,7 +315,7 @@ func (s *Serializer) marshal(v interface{},
 		}
 	}
 
-	return invalid
+	return invalid, node
 }
 
 func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
