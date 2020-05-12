@@ -95,73 +95,89 @@ func (r *Reporter) RenderReport(node *parser.StructNode,
 func (r *Reporter) renderReport(node *parser.StructNode,
 	filter *support.FieldFilters, params []Parameter, value bool) []Parameter {
 
-	if node.HasChildren() {
-		children := node.Childs
-		for i := range node.Childs {
-			params = r.renderReport(&children[i], filter, params, value)
+	var prm *Parameter
+	if filter.IsIncluded(node.FqName) {
+		if pmstag, ok := pms.ToPmsTag(node); ok {
+			prm = r.handlePmsTag(pmstag)
+		} else if asmtag, ok := asm.ToAsmTag(node); ok {
+			prm = r.handleAsmTag(asmtag)
+		} else {
+			log.Debug().Msgf("node %s has not pms or asm tag", node.FqName)
 		}
-	} else {
-		if filter.IsIncluded(node.FqName) {
-			var prm Parameter
 
-			if pmstag, ok := pms.ToPmsTag(node); ok {
-				prm = Parameter{
-					Name:        pmstag.GetFullName(),
-					Description: pmstag.Description(),
-					Tags:        pmstag.GetTags(),
-					Type:        ParameterStore,
-				}
-
-				prm.Details = PmsParameterDetails{
-					Pattern: pmstag.Pattern(),
-					Tier:    pmstag.SsmTier(r.tier),
-				}
-
-				if pmstag.IsLocalKey() {
-					// TODO: need to resolve it to an ARN
-				} else if !pmstag.DefaultAccountKey() {
-					// Key is ARN
-					prm.KeyID = pmstag.GetKeyName()
-				}
-
-				if pmstag.Secure() {
-					prm.ValueType = "SecureString"
-				} else {
-					prm.ValueType = "String"
-				}
-			} else if asmtag, ok := asm.ToAsmTag(node); ok {
-				prm = Parameter{
-					Name:        asmtag.GetFullName(),
-					Description: asmtag.Description(),
-					Tags:        asmtag.GetTags(),
-					Type:        ParameterStore,
-				}
-				prm.Type = SecretsManager
-				prm.ValueType = "SecureString"
-
-				if strKey := asmtag.StringKey(); strKey != "" {
-					prm.Details = AsmParameterDetails{
-						StringKey: strKey,
-					}
-				}
-
-				if asmtag.IsLocalKey() {
-					// TODO: need to resolve it to an ARN
-				} else if !asmtag.DefaultAccountKey() {
-					// Key is ARN
-					prm.KeyID = asmtag.GetKeyName()
-				}
-			} else {
-				log.Debug().Msgf("node %s has not pms or asm tag", node.FqName)
-			}
-
+		if prm != nil {
 			if value {
 				prm.Value = common.GetStringValueFromField(node)
 			}
 
-			params = append(params, prm)
+			params = append(params, *prm)
+		}
+	}
+
+	if node.HasChildren() {
+		if prm != nil {
+			prm.Value = common.GetStringValueFromField(node)
+		} else {
+			children := node.Childs
+			for i := range node.Childs {
+				params = r.renderReport(&children[i], filter, params, value)
+			}
 		}
 	}
 
 	return params
+}
+
+func (r *Reporter) handleAsmTag(asmtag *asm.AsmTagStruct) *Parameter {
+	prm := &Parameter{
+		Name:        asmtag.GetFullName(),
+		Description: asmtag.Description(),
+		Tags:        asmtag.GetTags(),
+		Type:        ParameterStore,
+	}
+	prm.Type = SecretsManager
+	prm.ValueType = "SecureString"
+
+	if strKey := asmtag.StringKey(); strKey != "" {
+		prm.Details = AsmParameterDetails{
+			StringKey: strKey,
+		}
+	}
+
+	if asmtag.IsLocalKey() {
+		// TODO: need to resolve it to an ARN
+	} else if !asmtag.DefaultAccountKey() {
+		// Key is ARN
+		prm.KeyID = asmtag.GetKeyName()
+	}
+	return prm
+}
+
+func (r *Reporter) handlePmsTag(pmstag *pms.PmsTagStruct) *Parameter {
+	prm := &Parameter{
+		Name:        pmstag.GetFullName(),
+		Description: pmstag.Description(),
+		Tags:        pmstag.GetTags(),
+		Type:        ParameterStore,
+	}
+
+	prm.Details = PmsParameterDetails{
+		Pattern: pmstag.Pattern(),
+		Tier:    pmstag.SsmTier(r.tier),
+	}
+
+	if pmstag.IsLocalKey() {
+		// TODO: need to resolve it to an ARN
+	} else if !pmstag.DefaultAccountKey() {
+		// Key is ARN
+		prm.KeyID = pmstag.GetKeyName()
+	}
+
+	if pmstag.Secure() {
+		prm.ValueType = "SecureString"
+	} else {
+		prm.ValueType = "String"
+	}
+
+	return prm
 }

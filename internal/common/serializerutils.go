@@ -44,11 +44,24 @@ func setSubStructViaJSONString(node *parser.StructNode, value string) error {
 	return nil
 }
 
+// getJSONViaSubStruct marshals a substruct into JSON payload
+func getJSONViaSubStruct(node *parser.StructNode) (string, error) {
+	data, err := json.Marshal(node.Value.Addr().Interface())
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
+}
+
 // GetStringValueFromField retrieves the value from the field and
 // converts it to a string
 func GetStringValueFromField(node *parser.StructNode) string {
 
 	switch node.Value.Kind() {
+	case reflect.Struct:
+		data, _ := getJSONViaSubStruct(node)
+		return data
 	case reflect.String:
 		return node.Value.String()
 	case reflect.Int, reflect.Int32, reflect.Int64, reflect.Int8:
