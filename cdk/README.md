@@ -87,50 +87,50 @@ This is an implementation of a CDK generator, that is template driven to fit you
 
 ```typescript
 import * as cdk from '@aws-cdk/core';
-    import * as asm from '@aws-cdk/aws-secretsmanager';
-    import * as pms from '@aws-cdk/aws-ssm';
+import * as asm from '@aws-cdk/aws-secretsmanager';
+import * as pms from '@aws-cdk/aws-ssm';
 
-    export class SsmParamsConstruct extends cdk.Construct {
-      constructor(scope: cdk.Construct, id: string) {
-        super(scope, id);
+export class SsmParamsConstruct extends cdk.Construct {
+  constructor(scope: cdk.Construct, id: string) {
+    super(scope, id);
 
-        // SetupSecrets & SetupParameters must be named exactly as stated below!
-        this.SetupSecrets();
-        this.SetupParameters();
-      }
+    // SetupSecrets & SetupParameters must be named exactly as stated below!
+    this.SetupSecrets();
+    this.SetupParameters();
+  }
 
-      private SetupSecrets() {
-              new asm.CfnSecret(this, 'Secret0', {
-                description: '',
-                name: '/dev/test-service/connectstring',
-                generateSecretString: {
-                  secretStringTemplate: '{"user": "nisse"}',
-                  generateStringKey: 'password',
-                },
-                tags: [{"key":"gurka","value":"biffen"},{"key":"nasse","value":"hunden"}]
-              });
-              new asm.CfnSecret(this, 'Secret1', {
-                description: '',
-                name: '/dev/test-service/mysecret',
-                secretString: '{"private": "nobody knows", "lockkey":"eeej1¤¤&1!"}',
-                tags: []
-              });
+  private SetupSecrets() {
+          new asm.CfnSecret(this, 'Secret0', {
+            description: '',
+            name: '/dev/test-service/connectstring',
+            generateSecretString: {
+              secretStringTemplate: '{"user": "nisse"}',
+              generateStringKey: 'password',
+            },
+            tags: [{"key":"gurka","value":"biffen"},{"key":"nasse","value":"hunden"}]
+          });
+          new asm.CfnSecret(this, 'Secret1', {
+            description: '',
+            name: '/dev/test-service/mysecret',
+            secretString: '{"private": "nobody knows", "lockkey":"eeej1¤¤&1!"}',
+            tags: []
+          });
 
-      }
+  }
 
-      private SetupParameters() {
-          new pms.CfnParameter(this, 'Parameter0', {
-                name: '/dev/test-service/parameter',
-                type: 'String',
-                value: 'a parameter',
-                allowedPattern: '.*',
-                description: 'A sample value',
-                policies: ''
-                tags: {"my":"hobby","by":"test"},
-                tier: 'Standard'
-              });
-      }
-    }
+  private SetupParameters() {
+      new pms.CfnParameter(this, 'Parameter0', {
+            name: '/dev/test-service/parameter',
+            type: 'String',
+            value: 'a parameter',
+            allowedPattern: '.*',
+            description: 'A sample value',
+            policies: ''
+            tags: {"my":"hobby","by":"test"},
+            tier: 'Standard'
+          });
+  }
+}
 ```
 
 Use the _node app/index.js --help_ to get help on which parameters you may use.
