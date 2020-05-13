@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mariotoffia/ssm.git/internal/testsupport"
+	"github.com/mariotoffia/ssm/internal/testsupport"
 	"github.com/stretchr/testify/assert"
 )
 

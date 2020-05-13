@@ -1,4 +1,4 @@
-module github.com/mariotoffia/ssm.git
+module github.com/mariotoffia/ssm
 
 require (
 	github.com/aws/aws-sdk-go-v2 v0.22.0

@@ -1,6 +1,6 @@
 package testsupport
 
-import "github.com/mariotoffia/ssm.git/support"
+import "github.com/mariotoffia/ssm/support"
 
 // SingleStringPmsStruct with single string
 type SingleStringPmsStruct struct {

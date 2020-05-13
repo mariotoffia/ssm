@@ -8,7 +8,7 @@ It is also possible to generate object, _JSON_ reports to e.g. use with [CDK](ht
 Only string value (**not binary**) for Secrets Manager is currently supported!
 
 How to use it; in the `go-mod` include the follwing requirement
-`require github.com/mariotoffia/ssm.git v0.3.0`
+`require github.com/mariotoffia/ssm v0.4.0`
 
 The intention to this library to simplify fetching & upserting one or more parameters, secrets blended with other settings. It is also intended to be as efficient as possible and hence possible to filter, exclude or include, which properties that should participate in `Unmarshal` or `Marshal` operation. It uses go standard _Tag_ support to direct the `Serializer` how to `Marshal` or `Unmarshal` the data. For example
 

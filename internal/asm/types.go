@@ -3,7 +3,7 @@ package asm
 import (
 	"strings"
 
-	"github.com/mariotoffia/ssm.git/parser"
+	"github.com/mariotoffia/ssm/parser"
 )
 
 // ParamTier specifies the parameter tier such as std, adv, or intelligent.

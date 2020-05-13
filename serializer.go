@@ -5,11 +5,11 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/mariotoffia/ssm.git/internal/asm"
-	"github.com/mariotoffia/ssm.git/internal/pms"
-	"github.com/mariotoffia/ssm.git/parser"
-	"github.com/mariotoffia/ssm.git/report"
-	"github.com/mariotoffia/ssm.git/support"
+	"github.com/mariotoffia/ssm/internal/asm"
+	"github.com/mariotoffia/ssm/internal/pms"
+	"github.com/mariotoffia/ssm/parser"
+	"github.com/mariotoffia/ssm/report"
+	"github.com/mariotoffia/ssm/support"
 )
 
 // Usage determines how the tags on the structs are evaluated

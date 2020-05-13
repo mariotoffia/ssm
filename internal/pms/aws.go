@@ -6,9 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/mariotoffia/ssm.git/internal/common"
-	"github.com/mariotoffia/ssm.git/parser"
-	"github.com/mariotoffia/ssm.git/support"
+	"github.com/mariotoffia/ssm/internal/common"
+	"github.com/mariotoffia/ssm/parser"
+	"github.com/mariotoffia/ssm/support"
 	"github.com/pkg/errors"
 )
 

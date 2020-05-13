@@ -3,7 +3,7 @@ package parser
 import (
 	"reflect"
 
-	"github.com/mariotoffia/ssm.git/support"
+	"github.com/mariotoffia/ssm/support"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )

@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/mariotoffia/ssm.git/parser"
+	"github.com/mariotoffia/ssm/parser"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 )

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mariotoffia/ssm.git/internal/testsupport"
-	"github.com/mariotoffia/ssm.git/support"
+	"github.com/mariotoffia/ssm/internal/testsupport"
+	"github.com/mariotoffia/ssm/support"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )

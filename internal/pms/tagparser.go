@@ -1,7 +1,7 @@
 package pms
 
 import (
-	"github.com/mariotoffia/ssm.git/parser"
+	"github.com/mariotoffia/ssm/parser"
 )
 
 type tagParser struct {
