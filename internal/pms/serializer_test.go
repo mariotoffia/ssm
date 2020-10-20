@@ -12,21 +12,149 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// cSpell:disable
 var stage string
 var scope string
+var provision bool
 
 func init() {
 	testing.Init() // Need to do this in order for flag.Parse() to work
+
 	flag.StringVar(&scope, "scope", "", "Scope for test")
+	flag.BoolVar(&provision, "provision", true,
+		"Set this to false when no provision the ssm with default values shall take place",
+	)
+
 	flag.Parse()
+
+	// TODO: just for manual testing
+	//provision = false
+	//scope = "rw"
 
 	stage = testsupport.UnittestStage()
 	log.Info().Msgf("Initializing PMS unittest with STAGE: %s", stage)
 
-	err := testsupport.DefaultProvisionPms(stage)
-	if err != nil {
-		panic(err)
+	if provision {
+		err := testsupport.DefaultProvisionPms(stage)
+		if err != nil {
+			panic(err)
+		}
 	}
+}
+
+func TestMarshalSecureParamAccountKMSKey(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
+	type Test struct {
+		MySecret string `pms:"param, keyid=default"`
+	}
+
+	test := Test{MySecret: `{"user":"nisse@hult.com", "pass":"kalle", "apikey":"abc-122-abc"}`}
+	tp := reflect.ValueOf(&test)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("pms", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	pmsRepository, err := New("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	result := pmsRepository.Upsert(node, support.NewFilters())
+	if len(result) > 0 {
+		assert.Equal(t, nil, result)
+	}
+
+	var tr Test
+	tp = reflect.ValueOf(&tr)
+
+	node, err = parser.New("test-service", stage, "").
+		RegisterTagParser("pms", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	_, err = pmsRepository.Get(node, support.NewFilters())
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t,
+		`{"user":"nisse@hult.com", "pass":"kalle", "apikey":"abc-122-abc"}`,
+		tr.MySecret,
+	)
+}
+
+func TestMarshalAsJSONWithDefaultKMSAccountKey(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
+	type Endpoint struct {
+		User     string `json:"user"`
+		Password string `json:"pass"`
+		APIKey   string `json:"api-key"`
+	}
+	type Test struct {
+		RemoteEndpoint Endpoint `pms:"remote-endpoint, keyid=default"`
+	}
+
+	test := Test{
+		RemoteEndpoint: Endpoint{
+			User:     "nisse@hult.com",
+			Password: "kalle",
+			APIKey:   "abc-122-abc",
+		},
+	}
+
+	tp := reflect.ValueOf(&test)
+
+	node, err := parser.New("test-service", stage, "").
+		RegisterTagParser("pms", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	pmsRepository, err := New("test-service")
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	result := pmsRepository.Upsert(node, support.NewFilters())
+	if len(result) > 0 {
+		assert.Equal(t, nil, result)
+	}
+
+	var tr Test
+	tp = reflect.ValueOf(&tr)
+
+	node, err = parser.New("test-service", stage, "").
+		RegisterTagParser("pms", NewTagParser()).
+		Parse(tp)
+
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	_, err = pmsRepository.Get(node, support.NewFilters())
+	if err != nil {
+		assert.Equal(t, nil, err)
+	}
+
+	assert.Equal(t, "nisse@hult.com", tr.RemoteEndpoint.User)
+	assert.Equal(t, "kalle", tr.RemoteEndpoint.Password)
+	assert.Equal(t, "abc-122-abc", tr.RemoteEndpoint.APIKey)
 }
 
 func TestUnmarshalWihSingleStringStruct(t *testing.T) {
@@ -40,12 +168,12 @@ func TestUnmarshalWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := New("test-service")
+	pmsRepository, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(node, support.NewFilters())
+	_, err = pmsRepository.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -66,12 +194,12 @@ func TestUnmarshalWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := New("test-service")
+	pmsRepository, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(node, support.NewFilters())
+	_, err = pmsRepository.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -95,12 +223,12 @@ func TestUnmarshalNestedJsonStructValue(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := New("test-service")
+	pmsRepository, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(node, support.NewFilters())
+	_, err = pmsRepository.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -127,12 +255,12 @@ func TestMarshalWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := New("test-service")
+	pmsRepository, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	result := pmsr.Upsert(node, support.NewFilters())
+	result := pmsRepository.Upsert(node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, result)
 	}
@@ -148,7 +276,7 @@ func TestMarshalWihSingleStringStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(node, support.NewFilters())
+	_, err = pmsRepository.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -175,12 +303,12 @@ func TestMarshalWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := New("test-service")
+	pmsRepository, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	result := pmsr.Upsert(node, support.NewFilters())
+	result := pmsRepository.Upsert(node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, result)
 	}
@@ -197,7 +325,7 @@ func TestMarshalWihSingleNestedStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(node, support.NewFilters())
+	_, err = pmsRepository.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -227,12 +355,12 @@ func TestMarshalSubStructAsJSON(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	pmsr, err := New("test-service")
+	pmsRepository, err := New("test-service")
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
 
-	result := pmsr.Upsert(node, support.NewFilters())
+	result := pmsRepository.Upsert(node, support.NewFilters())
 	if len(result) > 0 {
 		assert.Equal(t, nil, result)
 	}
@@ -249,7 +377,7 @@ func TestMarshalSubStructAsJSON(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	_, err = pmsr.Get(node, support.NewFilters())
+	_, err = pmsRepository.Get(node, support.NewFilters())
 	if err != nil {
 		assert.Equal(t, nil, err)
 	}
@@ -259,3 +387,5 @@ func TestMarshalSubStructAsJSON(t *testing.T) {
 	assert.Equal(t, 1088, tr.Connection.Timeout)
 	assert.Equal(t, "åaaäs2##!!äöå!#dfmklvmlkBBCH2¤", tr.Connection.Password)
 }
+
+// cSpell:enable
