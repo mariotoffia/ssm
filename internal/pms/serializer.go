@@ -123,7 +123,7 @@ func (p *Serializer) Upsert(node *parser.StructNode,
 			log.Debug().Str("svc", p.service).Msgf("Failed to write %v error: %v", im[node.FqName], err)
 
 		} else {
-			log.Debug().Str("svc", p.service).Msgf("Succesfully wrote %v", resp)
+			log.Debug().Str("svc", p.service).Msgf("Successfully wrote %v", resp)
 
 			if len(tags) > 0 {
 				req := client.AddTagsToResourceRequest(&ssm.AddTagsToResourceInput{

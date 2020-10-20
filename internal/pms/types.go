@@ -14,7 +14,7 @@ import (
 type ParamTier string
 
 const (
-	// Std is the standard tier that allows one accouint to store
+	// Std is the standard tier that allows one account to store
 	// 10,000 parameters for free
 	Std ParamTier = "std"
 	// Adv allows for storage of up 8kb of data and uses different encryption algorithms
@@ -31,8 +31,8 @@ const (
 // ToPmsTag converts a StructTag into the PmsTag interface
 // If fails, it return false.
 func ToPmsTag(generictag *parser.StructNode) (*PmsTagStruct, bool) {
-	if ntag, ok := generictag.Tag["pms"]; ok {
-		return ntag.(*PmsTagStruct), true
+	if nodeTag, ok := generictag.Tag["pms"]; ok {
+		return nodeTag.(*PmsTagStruct), true
 	}
 	return nil, false
 }

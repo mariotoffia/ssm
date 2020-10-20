@@ -22,9 +22,9 @@ func (p *Serializer) createFullNameFieldNode(remote string, err error,
 		Error:      err}
 }
 
-func (p *Serializer) toPutParameters(prms map[string]*parser.StructNode) []ssm.PutParameterInput {
+func (p *Serializer) toPutParameters(parameters map[string]*parser.StructNode) []ssm.PutParameterInput {
 	params := []ssm.PutParameterInput{}
-	for _, node := range prms {
+	for _, node := range parameters {
 		if tag, ok := ToPmsTag(node); ok {
 			params = append(params, ssm.PutParameterInput{Name: aws.String(tag.FqName()),
 				Overwrite: aws.Bool(tag.Overwrite()),
