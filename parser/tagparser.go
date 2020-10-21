@@ -47,7 +47,7 @@ func (p *tagParser) ParseTagString(tagstring string,
 		case "name":
 			st.Named["name"] = strings.ToLower(kv[1])
 		case "prefix":
-			st.Named["prefix"] = RenderPrefix(kv[1], env, "")
+			st.Named["prefix"] = RenderPrefix(kv[1], env, svc)
 			break
 		default:
 			if stringInSlice(kv[0], p.named) {
@@ -74,7 +74,7 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
-// RenderPrefix renders a prefix based on the inparam strings
+// RenderPrefix renders a prefix based on the in param strings
 func RenderPrefix(prefix string, env string, svc string) string {
 	if strings.HasPrefix(env, "/") {
 		env = env[1:]
@@ -88,8 +88,12 @@ func RenderPrefix(prefix string, env string, svc string) string {
 	if strings.HasSuffix(svc, "/") {
 		svc = svc[:1]
 	}
-	if prefix != "" && !strings.HasPrefix(prefix, "/") {
-		prefix = "/" + prefix
+	if prefix != "" {
+		if strings.HasPrefix(prefix, "/") {
+			svc = "" // Global prefix when starting with '/'
+		} else {
+			prefix = "/" + prefix
+		}
 	}
 	if strings.HasSuffix(prefix, "/") {
 		prefix = prefix[:1]
@@ -98,8 +102,10 @@ func RenderPrefix(prefix string, env string, svc string) string {
 	if prefix == "" {
 		return strings.ToLower(fmt.Sprintf("/%s/%s", env, svc))
 	}
+
 	if svc == "" {
 		return strings.ToLower(fmt.Sprintf("/%s%s", env, prefix))
 	}
+
 	return strings.ToLower(fmt.Sprintf("/%s/%s%s", env, svc, prefix))
 }

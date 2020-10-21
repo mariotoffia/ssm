@@ -12,7 +12,7 @@ import (
 	"github.com/mariotoffia/ssm/support"
 )
 
-// Usage determines how the tags on the structs are evaluated
+// Usage determines how the tags on the struct are evaluated
 type Usage string
 
 const (
@@ -22,7 +22,7 @@ const (
 	UseAsm = "asm"
 )
 
-// NoFilter specifieds that no Filtering shall be done
+// NoFilter specified that no Filtering shall be done
 var NoFilter *support.FieldFilters = &support.FieldFilters{}
 
 // AllTags will use all tags in the struct that this un-/marshaller supports
@@ -45,6 +45,7 @@ type Serializer struct {
 	tier      ssm.ParameterTier
 	usage     []Usage
 	parser    map[string]parser.TagParser
+	prefix    string
 }
 
 // NewSsmSerializer creates a new serializer with default aws.Config
@@ -57,7 +58,7 @@ func NewSsmSerializer(env string, service string) *Serializer {
 	}
 }
 
-// NewSsmSerializerFromConfig creates a new serializer using the inparam config instead
+// NewSsmSerializerFromConfig creates a new serializer using the in param config instead
 // of the default config.
 func NewSsmSerializerFromConfig(env string, service string, config aws.Config) *Serializer {
 	return &Serializer{
@@ -77,6 +78,31 @@ func (s *Serializer) UseTagParser(tag string, parser parser.TagParser) *Serializ
 	return s
 }
 
+// UsePrefix acts as a default prefix if no prefix is specified in the tag.
+//
+// Prefix operates under two modes: _Local_ and _Global_.
+//
+// .Local vs Global Mode
+// [cols="1,1,4"]
+// |===
+// |Mode |Example |Description
+//
+// |Local
+// |my-local-prefix/nested
+// |This will render environment/service/my-local-prefix/nested/property. E.g. dev/tes-service/my-local-prefix/nested/password
+//
+// |Global
+// |/my-global-prefix/nested
+// |This will render environment/my-global-prefix/nested/property. E.g. dev/my-global-prefix/nested/password
+//
+// |===
+//
+// NOTE: When global prefix, the _service_ element is eliminated (in order to have singeltons).
+func (s *Serializer) UsePrefix(prefix string) *Serializer {
+	s.prefix = prefix
+	return s
+}
+
 // SetTier allows for change the tier. By default Serializer uses
 // the standard tier.
 func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
@@ -84,22 +110,22 @@ func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
 	return s
 }
 
-// Unmarshal creates the inparam struct pointer (and sub structs as well).
+// Unmarshal creates the in param struct pointer (and sub struct as well).
 // It will populate the fields that are denoted with pms and asm
-// with data from the Systems Manager. It returns a map containg fields that
+// with data from the Systems Manager. It returns a map contains fields that
 // where requested but not set.
 func (s *Serializer) Unmarshal(v interface{}) (map[string]support.FullNameField, error) {
 	inv, _, err := s.unmarshal(v, nil, nil)
 	return inv, err
 }
 
-// UnmarshalWithOpts creates the inparam struct pointer (and sub structs as well).
+// UnmarshalWithOpts creates the in param struct pointer (and sub struct as well).
 // It will populate the fields that are denoted with pms and asm
-// with data from the Systems Manager. It returns a map containg fields that
+// with data from the Systems Manager. It returns a map contains fields that
 // where requested but not set. This version of Unmarshal accepts a set of inclusion
 // & exclusion filters. The type is only initialized with the non excluded or explicit
 // included field. By default  property is excluded. See @support.FieldFilters for more
-// informatio about filtering. It also accepts a set of usage directives that the calling
+// information about filtering. It also accepts a set of usage directives that the calling
 // code may turn off or on certain tags (for example do only unmarshal PMS data). By
 // default the serializer will use all supported tags.
 func (s *Serializer) UnmarshalWithOpts(v interface{},
@@ -116,10 +142,10 @@ func (s *Serializer) AdvUnmarshalWithOpts(v interface{},
 	return s.unmarshal(v, filter, usage)
 }
 
-// Marshal serializes the struct and sub-structs onto parameter store and AWS secrets
+// Marshal serializes the struct and sub-struct onto parameter store and AWS secrets
 // manager. The values are not checked, it will bluntly **upsert** the data onto the
-// remote storage. It returns a map containg fields that where tried to be set but for
-// some reason fails. The error property is aways filled in using Marshal (as opposed to
+// remote storage. It returns a map contains fields that where tried to be set but for
+// some reason fails. The error property is always filled in using Marshal (as opposed to
 // Unmarshal where it is never filled in). If any non field related error occurs an empty
 // support.FullNameField is returned with only the Error field populated.
 func (s *Serializer) Marshal(v interface{}) map[string]support.FullNameField {
@@ -127,10 +153,10 @@ func (s *Serializer) Marshal(v interface{}) map[string]support.FullNameField {
 	return inv
 }
 
-// MarshalWithOpts serializes the struct and sub-structs onto parameter store and AWS secrets
+// MarshalWithOpts serializes the struct and sub-struct onto parameter store and AWS secrets
 // manager. The values are not checked, it will bluntly **upsert** the data onto the
-// remote storage. It returns a map containg fields that where tried to be set but for
-// some reason fails. The error property is aways filled in using Marshal (as opposed to
+// remote storage. It returns a map contains fields that where tried to be set but for
+// some reason fails. The error property is always filled in using Marshal (as opposed to
 // Unmarshal where it is never filled in). If any non field related error occurs an empty
 // support.FullNameField is returned with only the Error field populated.
 //
@@ -152,7 +178,7 @@ func (s *Serializer) AdvMarshalWithOpts(v interface{},
 	return s.marshal(v, filter, usage)
 }
 
-// ReportWithOpts generates a struct based and JSON based report of the inparam type
+// ReportWithOpts generates a struct based and JSON based report of the in param type
 // or actual struct value to have default values generated.
 // The JSON report is on the following example format:
 // "parameters": [
@@ -172,7 +198,7 @@ func (s *Serializer) ReportWithOpts(v interface{},
 	values bool) (*report.Report, string, error) {
 
 	tp := reflect.ValueOf(v)
-	node, err := parser.New("test-service", "prod", "").
+	node, err := parser.New("test-service", "prod", s.prefix).
 		RegisterTagParser("asm", asm.NewTagParser()).
 		RegisterTagParser("pms", pms.NewTagParser()).
 		Parse(tp)
@@ -202,7 +228,7 @@ func (s *Serializer) unmarshal(v interface{},
 	}
 
 	tp := reflect.ValueOf(v)
-	prs := parser.New(s.service, s.env, "")
+	prs := parser.New(s.service, s.env, s.prefix)
 
 	if _, found := find(usage, UsePms); found {
 		prs.RegisterTagParser("pms", pms.NewTagParser())
@@ -223,21 +249,21 @@ func (s *Serializer) unmarshal(v interface{},
 	var invalid map[string]support.FullNameField
 
 	if _, found := find(usage, UsePms); found {
-		pmsr, err := s.getAndConfigurePms()
+		pmsRepository, err := s.getAndConfigurePms()
 		if err != nil {
 			return nil, nil, err
 		}
 
-		invalid, err = pmsr.Get(node, filter)
+		invalid, err = pmsRepository.Get(node, filter)
 	}
 
 	if _, found := find(usage, UseAsm); found {
-		asmr, err := s.getAndConfigureAsm()
+		asmRepository, err := s.getAndConfigureAsm()
 		if err != nil {
 			return nil, nil, err
 		}
 
-		invalid2, err := asmr.Get(node, filter)
+		invalid2, err := asmRepository.Get(node, filter)
 		if invalid == nil && len(invalid2) > 0 {
 			invalid = map[string]support.FullNameField{}
 		}
@@ -268,7 +294,7 @@ func (s *Serializer) marshal(v interface{},
 	}
 
 	tp := reflect.ValueOf(v)
-	parser := parser.New(s.service, s.env, "")
+	parser := parser.New(s.service, s.env, s.prefix)
 
 	if _, found := find(usage, UsePms); found {
 		parser.RegisterTagParser("pms", pms.NewTagParser())
@@ -290,21 +316,21 @@ func (s *Serializer) marshal(v interface{},
 	var invalid map[string]support.FullNameField
 
 	if _, found := find(usage, UsePms); found {
-		pmsr, err := s.getAndConfigurePms()
+		pmsRepository, err := s.getAndConfigurePms()
 		if err != nil {
 			return map[string]support.FullNameField{"": {Error: err}}, nil
 		}
 
-		invalid = pmsr.Upsert(node, filter)
+		invalid = pmsRepository.Upsert(node, filter)
 	}
 
 	if _, found := find(usage, UseAsm); found {
-		asmr, err := s.getAndConfigureAsm()
+		asmRepository, err := s.getAndConfigureAsm()
 		if err != nil {
 			return map[string]support.FullNameField{"": {Error: err}}, nil
 		}
 
-		invalid2 := asmr.Upsert(node, filter)
+		invalid2 := asmRepository.Upsert(node, filter)
 		if invalid == nil && len(invalid2) > 0 {
 			invalid = map[string]support.FullNameField{}
 		}
@@ -324,12 +350,12 @@ func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
 			SeDefaultTier(s.tier), nil
 	}
 
-	pmsr, err := pms.New(s.service)
+	pmsRepository, err := pms.New(s.service)
 	if err != nil {
 		return nil, err
 	}
 
-	return pmsr.SeDefaultTier(s.tier), nil
+	return pmsRepository.SeDefaultTier(s.tier), nil
 }
 
 func (s *Serializer) getAndConfigureAsm() (*asm.Serializer, error) {
@@ -337,12 +363,12 @@ func (s *Serializer) getAndConfigureAsm() (*asm.Serializer, error) {
 		return asm.NewFromConfig(s.config, s.service), nil
 	}
 
-	asmr, err := asm.New(s.service)
+	asmRepository, err := asm.New(s.service)
 	if err != nil {
 		return nil, err
 	}
 
-	return asmr, nil
+	return asmRepository, nil
 }
 
 func find(slice []Usage, val Usage) (int, bool) {

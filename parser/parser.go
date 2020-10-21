@@ -8,11 +8,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Parser parses structs and produces a tree of nodes
+// Parser parses struct(s) and produces a tree of nodes
 // along with fields, values and possibly tags.
 type Parser struct {
 	// Contains a registration of what name of tag
-	// and the parser instance to invoke. for exmaple
+	// and the parser instance to invoke. for example
 	// 'pms' and the parameter store tag parser instance.
 	tagparsers map[string]TagParser
 	// The service currently using this parser
@@ -25,6 +25,27 @@ type Parser struct {
 }
 
 // New creates a new instrance of the Parser
+//
+// When a _prefix_ is passed, it acts as a default prefix if no
+// prefix is specified in the tag. Prefix operates under two modes
+// _Local_ and _Global_.
+//
+// .Local vs Global Mode
+// [cols="1,1,4"]
+// |===
+// |Mode |Example |Description
+//
+// |Local
+// |my-local-prefix/nested
+// |This will render environment/service/my-local-prefix/nested/property. E.g. dev/tes-service/my-local-prefix/nested/password
+//
+// |Global
+// |/my-global-prefix/nested
+// |This will render environment/my-global-prefix/nested/property. E.g. dev/my-global-prefix/nested/password
+//
+// |===
+//
+// NOTE: When global prefix, the _service_ element is eliminated (in order to have singeltons).
 func New(service string, environment string, prefix string) *Parser {
 	return &Parser{
 		tagparsers:  map[string]TagParser{},
@@ -35,13 +56,13 @@ func New(service string, environment string, prefix string) *Parser {
 }
 
 // RegisterTagParser registers a tag parser that parses
-// a speicfied tag.
+// a specified tag.
 func (p *Parser) RegisterTagParser(tag string, parser TagParser) *Parser {
 	p.tagparsers[tag] = parser
 	return p
 }
 
-// Parse will parse the inparam value. It may either be a type
+// Parse will parse the in param value. It may either be a type
 // such as var s MyStruct or a instance such as s := MyStruct{...}
 // and then do reflect.ValueOf(&s) and send that to Parse.
 func (p *Parser) Parse(v reflect.Value) (*StructNode, error) {
@@ -63,9 +84,9 @@ func (p *Parser) Parse(v reflect.Value) (*StructNode, error) {
 	return node, nil
 }
 
-// NodesToParameterMap grabs all tag FullNames on nodes that do have atleast
+// NodesToParameterMap grabs all tag FullNames on nodes that do have at least
 // one tag in the StructNode.Tag property. The tags full name is the associated
-// with the node itself. This is to gain a more accessable structure to seach
+// with the node itself. This is to gain a more accessable structure to search
 // for nodes. Note if multiple tag FullName are present for same StructNode,
 // multiple entries in the paths map will be created, one per tag.FullName.
 func NodesToParameterMap(node *StructNode,

@@ -12,8 +12,8 @@ import (
 type TagParser interface {
 	// ParseTagString is implemented by the user of the parser. The tagstring is the complete
 	// tag string for the registered tag name. The parameter prefix is the navigation
-	// when having sub structs separated with slashes. In this way the parser may
-	// add it as prefix on some occations. The env is the inparam environment data and
+	// when having sub struct separated with slashes. In this way the parser may
+	// add it as prefix on some occasions. The env is the in param environment data and
 	// that can be anything. The svc is the service currently using this parser.
 	//
 	// The ParseTagString returns either a StructTag (struct) or an error.
@@ -52,14 +52,14 @@ type StructTagImpl struct {
 	FullName string
 }
 
-// Named gets the named parametres indexed by name. If not key = value,
+// GetNamed gets the named parametres indexed by name. If not key = value,
 // instead just a value the key is "" and the value is the value.
 func (t *StructTagImpl) GetNamed() map[string]string { return t.Named }
 
-// Tags conatains all tags that do not have a special meaning.
+// GetTags contains all tags that do not have a special meaning.
 func (t *StructTagImpl) GetTags() map[string]string { return t.Tags }
 
-// FullName is the fully qualified name, i.e. prefix + name
+// GetFullName is the fully qualified name, i.e. prefix + name
 func (t *StructTagImpl) GetFullName() string { return t.FullName }
 
 // StructNode is a node representing a struct
@@ -90,7 +90,7 @@ type StructNode struct {
 // HasChildren returns true if this node has children
 func (s *StructNode) HasChildren() bool { return len(s.Childs) > 0 }
 
-// HasTag checks if inparam tag name exists int the Tag map
+// HasTag checks if in param tag name exists int the Tag map
 func (s *StructNode) HasTag(tag string) bool {
 	_, ok := s.Tag[tag]
 	return ok
@@ -147,8 +147,8 @@ func (s *StructNode) ToString(children bool) string {
 		ot, s.Type.Name(), s.FqName, s.Tag, owner)
 
 	if children && s.Childs != nil && len(s.Childs) > 0 {
-		for _, chld := range s.Childs {
-			str += fmt.Sprintf("[%s --> %s]", str, chld.ToString(children))
+		for _, child := range s.Childs {
+			str += fmt.Sprintf("[%s --> %s]", str, child.ToString(children))
 		}
 	}
 
