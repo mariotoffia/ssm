@@ -406,3 +406,50 @@ func TestMarshalWihSingleNestedStructFilteredAsm(t *testing.T) {
 	assert.NotEqual(t, 999, test.AsmSub.Apa2) // Since not included
 	assert.Equal(t, "japp", test.AsmSub.Nu2)
 }
+
+func TestDeletePmsTaggedStruct(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
+	type Test struct {
+		Name string `pms:"test, prefix=simple"`
+		Sub  struct {
+			Apa int    `pms:"ext"`
+			Nu  string `pms:"myname"`
+		}
+		AsmSub struct {
+			Apa2 int    `asm:"ext"`
+			Nu2  string `asm:"myname"`
+		}
+	}
+
+	set := Test{Name: "nisse manpower"}
+	set.Sub.Apa = 88
+	set.Sub.Nu = "bubben här"
+	set.AsmSub.Apa2 = 99
+	set.AsmSub.Nu2 = "doris simmar"
+
+	s := NewSsmSerializer(stage, "test-service")
+	result := s.MarshalWithOpts(&set, NoFilter, OnlyPms)
+	if len(result) > 0 {
+		assert.Equal(t, nil, result)
+	}
+
+	var test Test
+	_, err := s.UnmarshalWithOpts(&test, NoFilter, OnlyPms)
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, "nisse manpower", test.Name)
+	assert.Equal(t, 88, test.Sub.Apa)
+	assert.Equal(t, "bubben här", test.Sub.Nu)
+
+	var test2 Test
+	fields, _ := s.DeleteWithOpts(&test2, NoFilter, OnlyPms)
+
+	assert.Equal(t, 0, len(fields), "all fields deleted")
+
+	var test3 Test
+	fields, _ = s.UnmarshalWithOpts(&test3, NoFilter, OnlyPms)
+	assert.Equal(t, 3, len(fields), "we should get three errors")
+}

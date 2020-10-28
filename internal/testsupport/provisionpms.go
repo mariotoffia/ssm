@@ -83,7 +83,7 @@ func ListDeletePrms() error {
 	return nil
 }
 
-// DefaultProvisionPms sets up a defualt test environment for PMS
+// DefaultProvisionPms sets up a default test environment for PMS
 func DefaultProvisionPms(stage string) error {
 	ListDeletePrms()
 

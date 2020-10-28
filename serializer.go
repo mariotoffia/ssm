@@ -110,6 +110,40 @@ func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
 	return s
 }
 
+// Delete creates the in param struct pointer (and sub struct as well).
+// It will search the fields that are denoted with pms and asm
+// with data from the Systems Manager. It tries to delete all keys. It returns
+// a map contains fields that where failed to be deleted.
+func (s *Serializer) Delete(v interface{}) (map[string]support.FullNameField, error) {
+	inv, _, err := s.delete(v, nil, nil)
+	return inv, err
+}
+
+// DeleteWithOpts creates the in param struct pointer (and sub struct as well).
+// It will search the fields that are denoted with pms and asm
+// with data from the Systems Manager. It tries to delete all keys. It returns
+// a map contains fields that where failed to be deleted.
+//
+// This version of Delete accepts a set of inclusion & exclusion filters. The type
+// is only parsed with the non excluded or explicit included field. By default
+// property is excluded. See @support.FieldFilters for more information about filtering.
+// It also accepts a set of usage directives that the calling code may turn off or on
+// certain tags (for example do only delete PMS data). By default the serializer will
+// use all supported tags.
+func (s *Serializer) DeleteWithOpts(v interface{},
+	filter *support.FieldFilters, usage []Usage) (map[string]support.FullNameField, error) {
+	inv, _, err := s.delete(v, filter, usage)
+	return inv, err
+}
+
+// AdvDeleteWithOpts is the same function as the DeleteWithOpts but is
+// also returns the tree of parsed node to be post-processed.
+func (s *Serializer) AdvDeleteWithOpts(v interface{},
+	filter *support.FieldFilters,
+	usage []Usage) (map[string]support.FullNameField, *parser.StructNode, error) {
+	return s.delete(v, filter, usage)
+}
+
 // Unmarshal creates the in param struct pointer (and sub struct as well).
 // It will populate the fields that are denoted with pms and asm
 // with data from the Systems Manager. It returns a map contains fields that
@@ -209,173 +243,4 @@ func (s *Serializer) ReportWithOpts(v interface{},
 
 	reporter := report.NewWithTier(s.tier)
 	return reporter.RenderReport(node, filter, true)
-}
-
-func (s *Serializer) unmarshal(v interface{},
-	filter *support.FieldFilters,
-	usage []Usage) (map[string]support.FullNameField, *parser.StructNode, error) {
-
-	if len(usage) == 0 {
-		if len(s.usage) > 0 {
-			usage = s.usage
-		} else {
-			usage = []Usage{UsePms, UseAsm}
-		}
-	}
-
-	if nil == filter {
-		filter = support.NewFilters()
-	}
-
-	tp := reflect.ValueOf(v)
-	prs := parser.New(s.service, s.env, s.prefix)
-
-	if _, found := find(usage, UsePms); found {
-		prs.RegisterTagParser("pms", pms.NewTagParser())
-	}
-	if _, found := find(usage, UseAsm); found {
-		prs.RegisterTagParser("asm", asm.NewTagParser())
-	}
-
-	for n, v := range s.parser {
-		prs.RegisterTagParser(n, v)
-	}
-
-	node, err := prs.Parse(tp)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var invalid map[string]support.FullNameField
-
-	if _, found := find(usage, UsePms); found {
-		pmsRepository, err := s.getAndConfigurePms()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		invalid, err = pmsRepository.Get(node, filter)
-	}
-
-	if _, found := find(usage, UseAsm); found {
-		asmRepository, err := s.getAndConfigureAsm()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		invalid2, err := asmRepository.Get(node, filter)
-		if invalid == nil && len(invalid2) > 0 {
-			invalid = map[string]support.FullNameField{}
-		}
-
-		// Merge field errors from ASM with PMS errors
-		for key, value := range invalid2 {
-			invalid[key] = value
-		}
-	}
-
-	return invalid, node, err
-}
-
-func (s *Serializer) marshal(v interface{},
-	filter *support.FieldFilters,
-	usage []Usage) (map[string]support.FullNameField, *parser.StructNode) {
-
-	if len(usage) == 0 {
-		if len(s.usage) > 0 {
-			usage = s.usage
-		} else {
-			usage = []Usage{UsePms, UseAsm}
-		}
-	}
-
-	if nil == filter {
-		filter = support.NewFilters()
-	}
-
-	tp := reflect.ValueOf(v)
-	parser := parser.New(s.service, s.env, s.prefix)
-
-	if _, found := find(usage, UsePms); found {
-		parser.RegisterTagParser("pms", pms.NewTagParser())
-	}
-	if _, found := find(usage, UseAsm); found {
-		parser.RegisterTagParser("asm", asm.NewTagParser())
-	}
-
-	for n, v := range s.parser {
-		parser.RegisterTagParser(n, v)
-	}
-
-	node, err := parser.Parse(tp)
-
-	if err != nil {
-		return map[string]support.FullNameField{"": {Error: err}}, nil
-	}
-
-	var invalid map[string]support.FullNameField
-
-	if _, found := find(usage, UsePms); found {
-		pmsRepository, err := s.getAndConfigurePms()
-		if err != nil {
-			return map[string]support.FullNameField{"": {Error: err}}, nil
-		}
-
-		invalid = pmsRepository.Upsert(node, filter)
-	}
-
-	if _, found := find(usage, UseAsm); found {
-		asmRepository, err := s.getAndConfigureAsm()
-		if err != nil {
-			return map[string]support.FullNameField{"": {Error: err}}, nil
-		}
-
-		invalid2 := asmRepository.Upsert(node, filter)
-		if invalid == nil && len(invalid2) > 0 {
-			invalid = map[string]support.FullNameField{}
-		}
-
-		// Merge field errors from ASM with PMS errors
-		for key, value := range invalid2 {
-			invalid[key] = value
-		}
-	}
-
-	return invalid, node
-}
-
-func (s *Serializer) getAndConfigurePms() (*pms.Serializer, error) {
-	if s.hasconfig {
-		return pms.NewFromConfig(s.config, s.service).
-			SeDefaultTier(s.tier), nil
-	}
-
-	pmsRepository, err := pms.New(s.service)
-	if err != nil {
-		return nil, err
-	}
-
-	return pmsRepository.SeDefaultTier(s.tier), nil
-}
-
-func (s *Serializer) getAndConfigureAsm() (*asm.Serializer, error) {
-	if s.hasconfig {
-		return asm.NewFromConfig(s.config, s.service), nil
-	}
-
-	asmRepository, err := asm.New(s.service)
-	if err != nil {
-		return nil, err
-	}
-
-	return asmRepository, nil
-}
-
-func find(slice []Usage, val Usage) (int, bool) {
-	for i, item := range slice {
-		if item == val {
-			return i, true
-		}
-	}
-	return -1, false
 }

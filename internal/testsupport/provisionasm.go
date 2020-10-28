@@ -69,6 +69,7 @@ func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 
 // DeleteAllUnittestSecrets tries to delete all unit test secrets
 func DeleteAllUnittestSecrets() error {
+
 	inp := secretsmanager.ListSecretsInput{}
 
 	awscfg, err := external.LoadDefaultAWSConfig()
@@ -114,8 +115,8 @@ func internalDelete(prms secretsmanager.DeleteSecretInput) error {
 	fmt.Printf("deleting-asm %v", prms)
 	req := svc.DeleteSecretRequest(&prms)
 	if _, err := req.Send(context.Background()); err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
+		if awserr, ok := err.(awserr.Error); ok {
+			switch awserr.Code() {
 			case secretsmanager.ErrCodeResourceNotFoundException:
 				break
 			default:

@@ -56,11 +56,11 @@ func (p *Serializer) Get(node *parser.StructNode,
 	m := map[string]*parser.StructNode{}
 	parser.NodesToParameterMap(node, m, filter, []string{"pms"})
 	paths := parser.ExtractPaths(m)
-	issecure := isSecure(node)
+	isSecure := isSecure(node)
 
 	params := &ssm.GetParametersInput{
 		Names:          paths,
-		WithDecryption: aws.Bool(issecure),
+		WithDecryption: aws.Bool(isSecure),
 	}
 
 	log.Debug().Str("svc", p.service).
@@ -73,7 +73,7 @@ func (p *Serializer) Get(node *parser.StructNode,
 		return nil, err
 	}
 
-	im := p.handleInvalidRequestParameters(invalid, m)
+	im := p.handleInvalidRequestParameters(invalid, m, "find")
 	err = p.populate(node, prms)
 
 	return im, err
@@ -138,7 +138,7 @@ func (p *Serializer) Upsert(node *parser.StructNode,
 					log.Debug().Str("svc", p.service).Msgf("Failed to write tags on %v error: %v", im[node.FqName], err)
 
 				} else {
-					log.Debug().Str("svc", p.service).Msgf("Succesfully wrote tags %v", resp)
+					log.Debug().Str("svc", p.service).Msgf("Successfully wrote tags %v", resp)
 				}
 			} else {
 				log.Debug().Str("svc", p.service).Msgf("No tags to add to %s - skipping", *prm.Name)
@@ -150,8 +150,10 @@ func (p *Serializer) Upsert(node *parser.StructNode,
 	return im
 }
 
-func (p *Serializer) handleInvalidRequestParameters(invalid []string,
-	m map[string]*parser.StructNode) map[string]support.FullNameField {
+func (p *Serializer) handleInvalidRequestParameters(
+	invalid []string,
+	m map[string]*parser.StructNode,
+	operation string) map[string]support.FullNameField {
 
 	im := map[string]support.FullNameField{}
 
@@ -161,14 +163,14 @@ func (p *Serializer) handleInvalidRequestParameters(invalid []string,
 				im[val.FqName] = support.FullNameField{RemoteName: val.Tag["pms"].GetFullName(),
 					LocalName: val.FqName, Field: val.Field, Value: val.Value}
 			} else {
-				log.Warn().Str("service", p.service).Msgf("Could not find %s in node map", name)
+				log.Warn().Str("service", p.service).Msgf("Could not %s %s in node map", operation, name)
 			}
 		}
 	}
 
 	if len(im) > 0 {
 		for key, val := range im {
-			log.Debug().Msgf("not fetched: %s [%s]", key, val.RemoteName)
+			log.Debug().Msgf("not %s - %s [%s]", operation, key, val.RemoteName)
 		}
 	}
 	return im

@@ -18,6 +18,6 @@ type FullNameField struct {
 	// a pointer; it may not have a value do check IsValid
 	// before accessing.
 	Value reflect.Value
-	// If any error occured during read or write it is stored here
+	// If any error occurred during read or write it is stored here
 	Error error
 }
