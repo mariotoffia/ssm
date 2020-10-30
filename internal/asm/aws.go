@@ -87,7 +87,7 @@ func (p *Serializer) createAwsSecret(client *secretsmanager.Client,
 	}
 
 	log.Debug().Str("svc", p.service).Str("method", "createAwsSecret").
-		Msgf("created secret %s value %s", *secret.Name, *secret.SecretString)
+		Msgf("created secret %s value ***", *secret.Name)
 
 	return resp.CreateSecretOutput, nil
 
@@ -110,7 +110,7 @@ func (p *Serializer) updateAwsSecret(client *secretsmanager.Client,
 	}
 
 	log.Debug().Str("svc", p.service).Str("method", "updateAwsSecret").
-		Msgf("updated secret %s value %s", *secret.Name, *secret.SecretString)
+		Msgf("updated secret %s value ***", *secret.Name)
 
 	return resp.UpdateSecretOutput, nil
 

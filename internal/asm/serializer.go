@@ -67,8 +67,7 @@ func (p *Serializer) Get(node *parser.StructNode,
 						}
 					}
 				} else {
-					log.Debug().Str("svc", p.service).Str("method", "Get").
-						Msgf("field %s = got %s", n.FqName, *result.SecretString)
+					log.Debug().Str("svc", p.service).Str("method", "Get").Msgf("field %s", n.FqName)
 
 					mprms[n.FqName] = result
 				}

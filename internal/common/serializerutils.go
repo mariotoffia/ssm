@@ -22,7 +22,7 @@ func setStructIntValue(rv reflect.Value, name string, value string) error {
 // SetStructValueFromString sets a field in a struct to the specified value.
 func SetStructValueFromString(node *parser.StructNode, name string, value string) error {
 
-	log.Debug().Msgf("setting: %s (%s) val: %s", node.FqName, name, value)
+	log.Debug().Msgf("setting: %s (%s)", node.FqName, name)
 
 	switch node.Value.Kind() {
 	case reflect.Struct:
