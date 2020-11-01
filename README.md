@@ -1,5 +1,5 @@
 [![GoDoc](https://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/mod/github.com/mariotoffia/ssm)
-[![GitHub Actions](https://img.shields.io/github/workflow/status/sethvargo/go-envconfig/Build?style=flat-square)](https://github.com/mariotoffia/ssm/actions?query=workflow%3ABuild)
+[![GitHub Actions](https://img.shields.io/github/workflow/status/mariotoffia/ssm/Go?style=flat-square)](https://github.com/mariotoffia/ssm/actions?query=workflow%3AGo)
 
 # Introduction
 This library is intended to allow for encode / decode _go_ `struct` _fields_ from [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
