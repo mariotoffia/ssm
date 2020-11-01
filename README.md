@@ -209,6 +209,59 @@ Note that plain `Unmarshal` will examine the struct for **both** _asm_ and _pms_
 
 Since the `keyid=default` is specifies (if a write operation and key do not exists) that the account default CMK is used.
 
+## Policies
+Make sure to enable policies so Lambda (or other code) may have the right to e.g. read, write or delete the parameters or secrets. 
+
+### Parameter Store
+
+* Marshal: "ssm:GetParameters"
+* Unmarshal: "ssm:PutParameter", if tags: "ssm:AddTagsToResource"
+* Delete: "ssm:DeleteParameters"
+
+Make sure to constrain your policy by e.g. prefixing the parameter. For example:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "mySid",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:PutParameter",
+                "ssm:GetParameters",
+                "ssm:DeleteParameters",
+                "ssm:AddTagsToResource"
+            ],
+            "Resource": "arn:aws:ssm:region:account-id:parameter/myParams/*"
+        }
+    ]
+}
+```
+
+### Secrets Manager
+
+* Marshal: "secretsmanager:GetSecretValue"
+* Unmarshal: "secretsmanager:CreateSecret", "secretsmanager:UpdateSecret", if tags: "secretsmanager:TagResource"
+* Delete: "secretsmanager:DeleteSecret", "secretsmanager:ListSecrets"
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "mySid",
+            "Effect": "Allow",
+            "Action": [
+                "secretsmanager:GetSecretValue"
+            ],
+            "Resource": "arn:aws:secretsmanager:<region>:<account-id-number>:secret:connectstring-??????"
+        }
+    ]
+}
+```
+
+Note, since secrets manager will append a unique id on the secret name, hence the 6 question mark to exactly match six wildcards. If you would, instead, use a wildcard, it may match whatever, e.g. connectstring-by-mail etc.
+
 ## AWS Secrets Manager
 In addition to Systems Manager, Parameter Store, this serializer can handle _asm_ tags that references to the Secrets Manager instead. This is good if you e.g. have a shared secret for a RDS and wish to rotate the secret. For example, if we would use PMS for all configuration around how to handle the database and logic around it and then use the secrets manager for the actual connection string. It could look like this:
 
