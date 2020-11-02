@@ -21,8 +21,8 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout"`
   Db struct {
-    ConnectString string `asm:"connection, prefix=global/accountingdb"`
-    BatchSize     int `pms:"batchsize"`
+    ConnectString string `asm:"connection, prefix=/global/accountingdb"`
+    BatchSize     int `pms:"batchsize, prefix=local/prefix"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
     Signer        string
@@ -45,7 +45,7 @@ The above example shows how to blend _PMS_ backed data with data set by the serv
 The above example uses keys from 
 + /eap/global/accountingdb/connection (Secrets Manager)
 + /eap/test-service/timeout (Parameter Store)
-+ /eap/test-service/db/batchsize (Parameter Store)
++ /eap/test-service/local/prefix/db/batchsize (Parameter Store)
 + /eap/test-service/db/timeout (Parameter Store)
 
 The counterpart `Marshal` in essence looks like this (see below for more information about _Marshal_)
