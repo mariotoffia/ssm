@@ -186,7 +186,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -274,7 +274,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `asm:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `asm:"connection, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -343,7 +343,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -407,7 +407,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -444,7 +444,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb"`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -473,7 +473,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb"`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -514,7 +514,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `asm:"connection, keyid=default, prefix=global/accountingdb"`
+    ConnectString string `asm:"connection, keyid=default, prefix=/global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -543,7 +543,7 @@ A neat thing is that you may define struct that are alike and read from one stor
 type MyContext struct {
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT", json:"timeout"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", json:"connectstring"`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", json:"connectstring"`
     BatchSize     int `pms:"batchsize", json:"batch"`
     DbTimeout     int `pms:"timeout", json:"dbtimeout"`
     UpdateRevenue bool `json:"update-revenue"`
