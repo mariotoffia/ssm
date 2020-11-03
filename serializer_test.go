@@ -20,6 +20,7 @@ func init() {
 	flag.Parse()
 
 	if scope != "clean" {
+
 		stage = testsupport.DefaultProvisionAsm()
 		log.Info().Msgf("Initializing main serializer unittest with STAGE: %s", stage)
 
@@ -452,4 +453,57 @@ func TestDeletePmsTaggedStruct(t *testing.T) {
 	var test3 Test
 	fields, _ = s.UnmarshalWithOpts(&test3, NoFilter, OnlyPms)
 	assert.Equal(t, 3, len(fields), "we should get three errors")
+}
+
+func TestGetWithIncorrectPrefix(t *testing.T) {
+	if scope != "rw" {
+		return
+	}
+
+	type Test struct {
+		Name string `pms:"test"`
+		Sub  struct {
+			Apa int    `pms:"ext"`
+			Nu  string `pms:"myname"`
+		}
+	}
+
+	set := Test{Name: "nisse manpower"}
+	set.Sub.Apa = 88
+	set.Sub.Nu = "bubben här"
+
+	s := NewSsmSerializer(stage, "test-service").
+		UsePrefix("/global/endeavor")
+
+	result := s.Marshal(&set)
+	if len(result) > 0 {
+
+		assert.Equal(t, 0, len(result),
+			"should not return any fields, since this indicates error %v", result,
+		)
+
+		return
+	}
+
+	defer func() {
+
+		var test2 Test
+
+		fields, _ := s.UsePrefix("/global/endeavor").
+			Delete(&test2)
+
+		assert.Equal(t, 0, len(fields), "You need to manually delete %v", fields)
+
+	}()
+
+	var test Test
+
+	fields2, err := s.UsePrefix("/global/endeavor2").
+		Unmarshal(&test)
+
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, 3, len(fields2),
+		"Since returning no fields indicates that is could read and that's wrong",
+	)
 }
