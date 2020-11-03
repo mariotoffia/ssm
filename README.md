@@ -1,3 +1,7 @@
+[![GoDoc](https://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://pkg.go.dev/mod/github.com/mariotoffia/ssm)
+[![GitHub Actions](https://img.shields.io/github/workflow/status/mariotoffia/ssm/Go?style=flat-square)](https://github.com/mariotoffia/ssm/actions?query=workflow%3AGo)
+![CodeQL](https://github.com/mariotoffia/ssm/workflows/CodeQL/badge.svg)
+
 # Introduction
 This library is intended to allow for encode / decode _go_ `struct` _fields_ from [AWS Systems Manager Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html) and [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
 
@@ -17,8 +21,8 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout"`
   Db struct {
-    ConnectString string `asm:"connection, prefix=global/accountingdb"`
-    BatchSize     int `pms:"batchsize"`
+    ConnectString string `asm:"connection, prefix=/global/accountingdb"`
+    BatchSize     int `pms:"batchsize, prefix=local/prefix"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
     Signer        string
@@ -41,7 +45,7 @@ The above example shows how to blend _PMS_ backed data with data set by the serv
 The above example uses keys from 
 + /eap/global/accountingdb/connection (Secrets Manager)
 + /eap/test-service/timeout (Parameter Store)
-+ /eap/test-service/db/batchsize (Parameter Store)
++ /eap/test-service/local/prefix/db/batchsize (Parameter Store)
 + /eap/test-service/db/timeout (Parameter Store)
 
 The counterpart `Marshal` in essence looks like this (see below for more information about _Marshal_)
@@ -182,7 +186,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -270,7 +274,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `asm:"connection, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `asm:"connection, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -339,7 +343,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -403,7 +407,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", env:DEBUG_DB_CONNECTION`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", env:DEBUG_DB_CONNECTION`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -440,7 +444,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb"`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -469,7 +473,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb"`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -510,7 +514,7 @@ type MyContext struct {
   Caller        string
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT"`
   Db struct {
-    ConnectString string `asm:"connection, keyid=default, prefix=global/accountingdb"`
+    ConnectString string `asm:"connection, keyid=default, prefix=/global/accountingdb"`
     BatchSize     int `pms:"batchsize"`
     DbTimeout     int `pms:"timeout"`
     UpdateRevenue bool
@@ -539,7 +543,7 @@ A neat thing is that you may define struct that are alike and read from one stor
 type MyContext struct {
   TotalTimeout  int `pms:"timeout",env:TOTAL_TIMEOUT", json:"timeout"`
   Db struct {
-    ConnectString string `pms:"connection, keyid=default, prefix=global/accountingdb", json:"connectstring"`
+    ConnectString string `pms:"connection, keyid=default, prefix=/global/accountingdb", json:"connectstring"`
     BatchSize     int `pms:"batchsize", json:"batch"`
     DbTimeout     int `pms:"timeout", json:"dbtimeout"`
     UpdateRevenue bool `json:"update-revenue"`
