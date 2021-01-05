@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/mariotoffia/ssm/internal/common"
 	"github.com/mariotoffia/ssm/parser"
 	"github.com/mariotoffia/ssm/support"
@@ -20,12 +21,12 @@ type Serializer struct {
 	// The name of the service using this library
 	service string
 	// Default tier if not specified.
-	tier ssm.ParameterTier
+	tier types.ParameterTier
 }
 
 // SeDefaultTier allows for change the tier. By default the
 // serializer uses the standard tier.
-func (p *Serializer) SeDefaultTier(tier ssm.ParameterTier) *Serializer {
+func (p *Serializer) SeDefaultTier(tier types.ParameterTier) *Serializer {
 	p.tier = tier
 	return p
 }
@@ -33,18 +34,18 @@ func (p *Serializer) SeDefaultTier(tier ssm.ParameterTier) *Serializer {
 // NewFromConfig creates a repository using a existing configuration
 func NewFromConfig(config aws.Config, service string) *Serializer {
 	return &Serializer{config: config, service: service,
-		tier: ssm.ParameterTierStandard}
+		tier: types.ParameterTierStandard}
 }
 
 // New creates a repository using the default AWS configuration
 func New(service string) (*Serializer, error) {
-	awscfg, err := external.LoadDefaultAWSConfig()
+	awscfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return &Serializer{}, errors.Wrapf(err, "Failed to load AWS config")
 	}
 
 	return &Serializer{config: awscfg, service: service,
-		tier: ssm.ParameterTierStandard}, nil
+		tier: types.ParameterTierStandard}, nil
 }
 
 // Get parameters from the parameterstore and populates the node graph with values.
@@ -60,7 +61,7 @@ func (p *Serializer) Get(node *parser.StructNode,
 
 	params := &ssm.GetParametersInput{
 		Names:          paths,
-		WithDecryption: aws.Bool(isSecure),
+		WithDecryption: isSecure,
 	}
 
 	log.Debug().Str("svc", p.service).
@@ -110,38 +111,46 @@ func (p *Serializer) Upsert(node *parser.StructNode,
 		return im
 	}
 	params := p.toPutParameters(m)
-	client := ssm.New(p.config)
+	client := ssm.NewFromConfig(p.config)
 
 	for _, prm := range params {
+
 		tags := prm.Tags
 		prm.Tags = nil
 
-		req := client.PutParameterRequest(&prm)
-		resp, err := req.Send(context.TODO())
+		resp, err := client.PutParameter(context.Background(), &prm)
+
 		if err != nil {
+
 			im[node.FqName] = p.createFullNameFieldNode(*prm.Name, err, m[*prm.Name])
 			log.Debug().Str("svc", p.service).Msgf("Failed to write %v error: %v", im[node.FqName], err)
 
 		} else {
+
 			log.Debug().Str("svc", p.service).Msgf("Successfully wrote %v", resp)
 
 			if len(tags) > 0 {
-				req := client.AddTagsToResourceRequest(&ssm.AddTagsToResourceInput{
+
+				resp, err := client.AddTagsToResource(context.Background(), &ssm.AddTagsToResourceInput{
 					ResourceId:   prm.Name,
-					ResourceType: ssm.ResourceTypeForTaggingParameter,
+					ResourceType: types.ResourceTypeForTaggingParameter,
 					Tags:         tags,
 				})
 
-				resp, err := req.Send(context.TODO())
 				if err != nil {
+
 					im[node.FqName] = p.createFullNameFieldNode(*prm.Name, err, m[*prm.Name])
 					log.Debug().Str("svc", p.service).Msgf("Failed to write tags on %v error: %v", im[node.FqName], err)
 
 				} else {
+
 					log.Debug().Str("svc", p.service).Msgf("Successfully wrote tags %v", resp)
+
 				}
 			} else {
+
 				log.Debug().Str("svc", p.service).Msgf("No tags to add to %s - skipping", *prm.Name)
+
 			}
 		}
 
@@ -158,39 +167,61 @@ func (p *Serializer) handleInvalidRequestParameters(
 	im := map[string]support.FullNameField{}
 
 	if len(invalid) > 0 {
+
 		for _, name := range invalid {
+
 			if val, ok := m[name]; ok {
+
 				im[val.FqName] = support.FullNameField{RemoteName: val.Tag["pms"].GetFullName(),
 					LocalName: val.FqName, Field: val.Field, Value: val.Value}
+
 			} else {
+
 				log.Warn().Str("service", p.service).Msgf("Could not %s %s in node map", operation, name)
+
 			}
 		}
 	}
 
 	if len(im) > 0 {
+
 		for key, val := range im {
+
 			log.Debug().Msgf("not %s - %s [%s]", operation, key, val.RemoteName)
+
 		}
+
 	}
+
 	return im
 }
 
-func (p *Serializer) populate(node *parser.StructNode, params map[string]ssm.Parameter) error {
+func (p *Serializer) populate(node *parser.StructNode, params map[string]types.Parameter) error {
+
 	node.EnsureInstance(false)
 
 	if tag, ok := node.Tag["pms"]; ok {
+
 		if val, ok := params[tag.GetFullName()]; ok {
+
 			if tag.GetFullName() != "" {
+
 				common.SetStructValueFromString(node, *val.Name, *val.Value)
+
 			}
+
 		}
+
 	}
 
 	if node.HasChildren() {
+
 		for _, n := range node.Childs {
+
 			p.populate(&n, params)
+
 		}
+
 	}
 
 	return nil

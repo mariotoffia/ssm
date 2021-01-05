@@ -1,10 +1,12 @@
 package asm
 
 import (
+	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"github.com/mariotoffia/ssm/internal/common"
 	"github.com/mariotoffia/ssm/parser"
 	"github.com/mariotoffia/ssm/support"
@@ -25,7 +27,8 @@ func NewFromConfig(config aws.Config, service string) *Serializer {
 
 // New creates a repository using the default configuration.
 func New(service string) (*Serializer, error) {
-	awscfg, err := external.LoadDefaultAWSConfig()
+
+	awscfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
 		return &Serializer{}, errors.Wrapf(err, "Failed to load AWS config")
 	}
@@ -57,22 +60,30 @@ func (p *Serializer) Get(node *parser.StructNode,
 				result, err := p.getFromAws(prm, nasm)
 
 				if err != nil {
-					if aerr, ok := err.(awserr.Error); ok {
-						switch aerr.Code() {
-						case secretsmanager.ErrCodeResourceNotFoundException:
-							im[n.FqName] = support.FullNameField{LocalName: n.FqName,
-								RemoteName: prm, Field: node.Field, Value: node.Value}
-						default:
-							return nil, errors.Wrapf(err, "Failed fetch asm config entry %s", prm)
-						}
-					}
-				} else {
-					log.Debug().Str("svc", p.service).Str("method", "Get").Msgf("field %s", n.FqName)
 
+					var resourceNotFound *types.ResourceNotFoundException
+
+					if errors.As(err, resourceNotFound) {
+
+						im[n.FqName] = support.FullNameField{LocalName: n.FqName,
+							RemoteName: prm, Field: node.Field, Value: node.Value}
+
+					} else {
+
+						return nil, errors.Wrapf(err, "Failed fetch asm config entry %s", prm)
+
+					}
+
+				} else {
+
+					log.Debug().Str("svc", p.service).Str("method", "Get").Msgf("field %s", n.FqName)
 					mprms[n.FqName] = result
+
 				}
 			} else {
+
 				log.Warn().Str("svc", p.service).Msgf("tag is not asm tag! tag: %v", n)
+
 			}
 		}
 	}
@@ -92,7 +103,7 @@ func (p *Serializer) Upsert(node *parser.StructNode,
 	// TODO: Implement me!
 	im := map[string]support.FullNameField{}
 
-	client := secretsmanager.New(p.config)
+	client := secretsmanager.NewFromConfig(p.config)
 	params := genCreateSecretParams(m)
 
 	for _, prm := range params {

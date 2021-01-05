@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/mariotoffia/ssm/internal/asm"
 	"github.com/mariotoffia/ssm/internal/pms"
 	"github.com/mariotoffia/ssm/parser"
@@ -42,7 +42,7 @@ type Serializer struct {
 	config    aws.Config
 	service   string
 	env       string
-	tier      ssm.ParameterTier
+	tier      types.ParameterTier
 	usage     []Usage
 	parser    map[string]parser.TagParser
 	prefix    string
@@ -53,7 +53,7 @@ func NewSsmSerializer(env string, service string) *Serializer {
 	return &Serializer{
 		env:     env,
 		service: service,
-		tier:    ssm.ParameterTierStandard,
+		tier:    types.ParameterTierStandard,
 		parser:  map[string]parser.TagParser{},
 	}
 }
@@ -64,7 +64,7 @@ func NewSsmSerializerFromConfig(env string, service string, config aws.Config) *
 	return &Serializer{
 		env:       env,
 		service:   service,
-		tier:      ssm.ParameterTierStandard,
+		tier:      types.ParameterTierStandard,
 		config:    config,
 		hasconfig: true,
 		parser:    map[string]parser.TagParser{},
@@ -105,7 +105,7 @@ func (s *Serializer) UsePrefix(prefix string) *Serializer {
 
 // SetTier allows for change the tier. By default Serializer uses
 // the standard tier.
-func (s *Serializer) SetTier(tier ssm.ParameterTier) *Serializer {
+func (s *Serializer) SetTier(tier types.ParameterTier) *Serializer {
 	s.tier = tier
 	return s
 }

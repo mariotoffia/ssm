@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"github.com/google/uuid"
 	"github.com/mariotoffia/ssm/internal/common"
 	"github.com/mariotoffia/ssm/parser"
@@ -23,7 +24,7 @@ func genCreateSecretParams(nodes map[string]*parser.StructNode) []secretsmanager
 
 func genCreateSecretParam(node *parser.StructNode) secretsmanager.CreateSecretInput {
 	var keyid *string = nil
-	var tags []secretsmanager.Tag = nil
+	var tags []types.Tag = nil
 
 	if tag, ok := ToAsmTag(node); ok {
 		if !tag.DefaultAccountKey() {
@@ -32,9 +33,9 @@ func genCreateSecretParam(node *parser.StructNode) secretsmanager.CreateSecretIn
 
 		t := tag.Tag()
 		if len(t) > 0 {
-			tags = []secretsmanager.Tag{}
+			tags = []types.Tag{}
 			for key := range t {
-				tags = append(tags, secretsmanager.Tag{Key: aws.String(key), Value: aws.String(t[key])})
+				tags = append(tags, types.Tag{Key: aws.String(key), Value: aws.String(t[key])})
 			}
 		}
 
@@ -64,22 +65,21 @@ func (p *Serializer) getFromAws(prm string,
 		params = &secretsmanager.GetSecretValueInput{SecretId: aws.String(prm), VersionId: aws.String(nasm.VersionID())}
 	}
 
-	client := secretsmanager.New(p.config)
-	req := client.GetSecretValueRequest(params)
-	resp, err := req.Send(context.Background())
+	client := secretsmanager.NewFromConfig(p.config)
+
+	resp, err := client.GetSecretValue(context.Background(), params)
 
 	if err != nil {
 		log.Debug().Msgf("error for '%s': %v err %v", prm, resp, err)
 		return nil, err
 	}
-	return resp.GetSecretValueOutput, nil
+	return resp, nil
 }
 
 func (p *Serializer) createAwsSecret(client *secretsmanager.Client,
 	secret secretsmanager.CreateSecretInput) (*secretsmanager.CreateSecretOutput, error) {
 
-	req := client.CreateSecretRequest(&secret)
-	resp, err := req.Send(context.Background())
+	resp, err := client.CreateSecret(context.Background(), &secret)
 
 	if err != nil {
 		log.Debug().Msgf("create error for '%s': %v err %v", *secret.Name, resp, err)
@@ -89,21 +89,21 @@ func (p *Serializer) createAwsSecret(client *secretsmanager.Client,
 	log.Debug().Str("svc", p.service).Str("method", "createAwsSecret").
 		Msgf("created secret %s value ***", *secret.Name)
 
-	return resp.CreateSecretOutput, nil
+	return resp, nil
 
 }
 
 func (p *Serializer) updateAwsSecret(client *secretsmanager.Client,
 	secret secretsmanager.CreateSecretInput) (*secretsmanager.UpdateSecretOutput, error) {
 
-	req := client.UpdateSecretRequest(&secretsmanager.UpdateSecretInput{
+	resp, err := client.UpdateSecret(context.Background(), &secretsmanager.UpdateSecretInput{
 		ClientRequestToken: secret.ClientRequestToken,
 		Description:        secret.Description,
 		KmsKeyId:           secret.KmsKeyId,
 		SecretId:           secret.Name,
 		SecretString:       secret.SecretString,
 	})
-	resp, err := req.Send(context.Background())
+
 	if err != nil {
 		log.Debug().Msgf("update error for '%s': %v err %v", *secret.Name, resp, err)
 		return nil, err
@@ -112,18 +112,18 @@ func (p *Serializer) updateAwsSecret(client *secretsmanager.Client,
 	log.Debug().Str("svc", p.service).Str("method", "updateAwsSecret").
 		Msgf("updated secret %s value ***", *secret.Name)
 
-	return resp.UpdateSecretOutput, nil
+	return resp, nil
 
 }
 
 func (p *Serializer) tagAwsSecret(client *secretsmanager.Client,
 	secret secretsmanager.CreateSecretInput) (*secretsmanager.TagResourceOutput, error) {
 
-	req := client.TagResourceRequest(&secretsmanager.TagResourceInput{
+	resp, err := client.TagResource(context.Background(), &secretsmanager.TagResourceInput{
 		SecretId: secret.Name,
 		Tags:     secret.Tags,
 	})
-	resp, err := req.Send(context.Background())
+
 	if err != nil {
 		log.Debug().Msgf("update tgs error for '%s': %v err %v", *secret.Name, resp, err)
 		return nil, err
@@ -132,6 +132,6 @@ func (p *Serializer) tagAwsSecret(client *secretsmanager.Client,
 	log.Debug().Str("svc", p.service).Str("method", "tagAwsSecret").
 		Msgf("tagged secret %s tags %v", *secret.Name, secret.Tags)
 
-	return resp.TagResourceOutput, nil
+	return resp, nil
 
 }

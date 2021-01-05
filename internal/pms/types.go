@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/mariotoffia/ssm/parser"
 )
 
@@ -38,16 +38,25 @@ func ToPmsTag(generictag *parser.StructNode) (*PmsTagStruct, bool) {
 }
 
 // ParameterType gets the Parameter Store Parameter Type.
-func ParameterType(node *parser.StructNode) ssm.ParameterType {
+func ParameterType(node *parser.StructNode) types.ParameterType {
+
 	if tag, ok := ToPmsTag(node); ok {
+
 		if tag.Secure() {
-			return ssm.ParameterTypeSecureString
+
+			return types.ParameterTypeSecureString
+
 		}
+
 		if node.Value.Kind() == reflect.Slice {
-			return ssm.ParameterTypeStringList
+
+			return types.ParameterTypeStringList
+
 		}
+
 	}
-	return ssm.ParameterTypeString
+
+	return types.ParameterTypeString
 }
 
 // PmsTag is a generic interface
@@ -64,9 +73,9 @@ type PmsTag interface {
 	IsLocalKey() bool
 	GetKeyName() string
 	Tier() ParamTier
-	SsmTier(defaultTier ssm.ParameterTier) ssm.ParameterTier
+	SsmTier(defaultTier types.ParameterTier) types.ParameterTier
 	Pattern() string
-	SsmTags() []ssm.Tag
+	SsmTags() []types.Tag
 }
 
 // PmsTagStruct is for AWS parameter store
@@ -87,29 +96,29 @@ func (t *PmsTagStruct) Tier() ParamTier {
 }
 
 // SsmTags Converts the StructTag.Tags into ssm version of Tags
-func (t *PmsTagStruct) SsmTags() []ssm.Tag {
+func (t *PmsTagStruct) SsmTags() []types.Tag {
 
-	tags := []ssm.Tag{}
+	tags := []types.Tag{}
 
 	for key, value := range t.StructTagImpl.Tags {
-		tags = append(tags, ssm.Tag{Key: aws.String(key), Value: aws.String(value)})
+		tags = append(tags, types.Tag{Key: aws.String(key), Value: aws.String(value)})
 	}
 
 	return tags
 }
 
 // SsmTier returns the tier or a default specified in the in-param
-func (t *PmsTagStruct) SsmTier(defaultTier ssm.ParameterTier) ssm.ParameterTier {
+func (t *PmsTagStruct) SsmTier(defaultTier types.ParameterTier) types.ParameterTier {
 
 	switch t.Tier() {
 	case Default:
 		return defaultTier
 	case Std:
-		return ssm.ParameterTierStandard
+		return types.ParameterTierStandard
 	case Adv:
-		return ssm.ParameterTierAdvanced
+		return types.ParameterTierAdvanced
 	case Eval:
-		return ssm.ParameterTierIntelligentTiering
+		return types.ParameterTierIntelligentTiering
 	}
 
 	return defaultTier
@@ -117,10 +126,15 @@ func (t *PmsTagStruct) SsmTier(defaultTier ssm.ParameterTier) ssm.ParameterTier 
 
 // Overwrite returns true (default) if it will overwrite parameter upon write
 func (t *PmsTagStruct) Overwrite() bool {
+
 	overwrite := false
+
 	if prm, ok := t.StructTagImpl.Named["overwrite"]; ok {
+
 		overwrite, _ = strconv.ParseBool(prm)
+
 	}
+
 	return overwrite
 }
 

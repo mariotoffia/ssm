@@ -2,12 +2,13 @@ package asm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	smtypes "github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"github.com/mariotoffia/ssm/parser"
 	"github.com/mariotoffia/ssm/support"
 	"github.com/rs/zerolog/log"
@@ -19,7 +20,7 @@ func (p *Serializer) Delete(
 	filter *support.FieldFilters) (map[string]support.FullNameField, error) {
 
 	m := map[string]*parser.StructNode{}
-	svc := secretsmanager.New(p.config)
+	svc := secretsmanager.NewFromConfig(p.config)
 
 	parser.NodesToParameterMap(node, m, filter, []string{"asm"})
 
@@ -31,7 +32,7 @@ func (p *Serializer) Delete(
 		err := internalDelete(
 			svc,
 			secretsmanager.DeleteSecretInput{SecretId: aws.String(path),
-				ForceDeleteWithoutRecovery: aws.Bool(true)},
+				ForceDeleteWithoutRecovery: true},
 		)
 
 		if err != nil {
@@ -57,13 +58,12 @@ func (p *Serializer) Delete(
 // to delete several trees.
 func (p *Serializer) DeleteTree(prefixes ...string) error {
 
-	svc := secretsmanager.New(p.config)
+	svc := secretsmanager.NewFromConfig(p.config)
 	input := secretsmanager.ListSecretsInput{}
 
 	for {
 
-		req := svc.ListSecretsRequest(&input)
-		resp, err := req.Send(context.Background())
+		resp, err := svc.ListSecrets(context.Background(), &input)
 
 		if err != nil {
 
@@ -83,7 +83,7 @@ func (p *Serializer) DeleteTree(prefixes ...string) error {
 				internalDelete(
 					svc,
 					secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
-						ForceDeleteWithoutRecovery: aws.Bool(true)},
+						ForceDeleteWithoutRecovery: true},
 				)
 
 			}
@@ -117,17 +117,18 @@ func findPrefix(array []string, val string) bool {
 func internalDelete(svc *secretsmanager.Client, prms secretsmanager.DeleteSecretInput) error {
 
 	fmt.Printf("deleting-asm %v", prms)
-	req := svc.DeleteSecretRequest(&prms)
-	if _, err := req.Send(context.Background()); err != nil {
-		if awserr, ok := err.(awserr.Error); ok {
-			switch awserr.Code() {
-			case secretsmanager.ErrCodeResourceNotFoundException:
-				break
-			default:
-				log.Warn().Msgf("Error when deleting %v", prms)
-				return err
-			}
+
+	if _, err := svc.DeleteSecret(context.Background(), &prms); err != nil {
+
+		var resourceNotFound *smtypes.ResourceNotFoundException
+
+		if errors.As(err, resourceNotFound) {
+			return nil
 		}
+
+		log.Warn().Msgf("Error when deleting %v", prms)
+		return err
 	}
+
 	return nil
 }

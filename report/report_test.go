@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/mariotoffia/ssm/internal/asm"
 	"github.com/mariotoffia/ssm/internal/pms"
 	"github.com/mariotoffia/ssm/internal/testsupport"
@@ -28,7 +28,7 @@ func TestReportSingleAsmStringNilStruct(t *testing.T) {
 
 	parser.DumpNode(node)
 
-	reporter := NewWithTier(ssm.ParameterTierStandard)
+	reporter := NewWithTier(types.ParameterTierStandard)
 	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -53,7 +53,7 @@ func TestReportSingleAsmStringValueStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	reporter := NewWithTier(ssm.ParameterTierStandard)
+	reporter := NewWithTier(types.ParameterTierStandard)
 	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -81,7 +81,7 @@ func TestReportSingleAsmSecretSubJsonStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	reporter := NewWithTier(ssm.ParameterTierStandard)
+	reporter := NewWithTier(types.ParameterTierStandard)
 	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -106,7 +106,7 @@ func TestReportSingleAsmSecretSubJsonNilStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	reporter := NewWithTier(ssm.ParameterTierStandard)
+	reporter := NewWithTier(types.ParameterTierStandard)
 	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
 	if err != nil {
 		assert.Equal(t, nil, err)
@@ -139,7 +139,7 @@ func TestReportPostgresSQLTemplateStruct(t *testing.T) {
 		assert.Equal(t, nil, err)
 	}
 
-	reporter := NewWithTier(ssm.ParameterTierStandard)
+	reporter := NewWithTier(types.ParameterTierStandard)
 	report, buff, err := reporter.RenderReport(node, &support.FieldFilters{}, true)
 	if err != nil {
 		assert.Equal(t, nil, err)

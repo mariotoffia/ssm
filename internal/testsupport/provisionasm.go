@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -50,19 +50,25 @@ func Secrets(stage string) []secretsmanager.CreateSecretInput {
 // ProvisionAsm provision secrets
 func ProvisionAsm(prms []secretsmanager.CreateSecretInput) {
 
-	awscfg, err := external.LoadDefaultAWSConfig()
+	awscfg, err := config.LoadDefaultConfig(context.Background())
+
 	if err != nil {
+
 		panic(err)
+
 	}
 
-	svc := secretsmanager.New(awscfg)
+	svc := secretsmanager.NewFromConfig(awscfg)
 
 	for _, p := range prms {
+
 		log.Info().Msgf("Creating asm-secret %s", *p.Name)
-		req := svc.CreateSecretRequest(&p)
-		if _, err := req.Send(context.Background()); err != nil {
+
+		if _, err := svc.CreateSecret(context.Background(), &p); err != nil {
+
 			log.Debug().Msgf("Failed to create asm-secret %s", *p.Name)
 			panic(err)
+
 		}
 	}
 }
@@ -72,26 +78,36 @@ func DeleteAllUnittestSecrets() error {
 
 	inp := secretsmanager.ListSecretsInput{}
 
-	awscfg, err := external.LoadDefaultAWSConfig()
+	awscfg, err := config.LoadDefaultConfig(context.Background())
+
 	if err != nil {
+
 		return errors.Wrapf(err, "Failed to load AWS config")
+
 	}
 
-	svc := secretsmanager.New(awscfg)
+	svc := secretsmanager.NewFromConfig(awscfg)
 	for {
-		req := svc.ListSecretsRequest(&inp)
-		resp, err := req.Send(context.Background())
+		resp, err := svc.ListSecrets(context.Background(), &inp)
+
 		if err != nil {
+
 			log.Warn().Msgf("Failed to list asm-secrets %v", err)
 			break
+
 		}
 
 		inp.NextToken = resp.NextToken
+
 		for _, s := range resp.SecretList {
+
 			log.Debug().Msgf("Found asm-secret %s", *s.Name)
+
 			if strings.HasPrefix(*s.Name, "/unittest-") {
+
 				internalDelete(secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
-					ForceDeleteWithoutRecovery: aws.Bool(true)})
+					ForceDeleteWithoutRecovery: true})
+
 			}
 		}
 
@@ -105,25 +121,28 @@ func DeleteAllUnittestSecrets() error {
 }
 
 func internalDelete(prms secretsmanager.DeleteSecretInput) error {
-	awscfg, err := external.LoadDefaultAWSConfig()
+
+	awscfg, err := config.LoadDefaultConfig(context.Background())
+
 	if err != nil {
+
 		return errors.Wrapf(err, "Failed to load AWS config")
+
 	}
 
-	svc := secretsmanager.New(awscfg)
+	svc := secretsmanager.NewFromConfig(awscfg)
 
 	fmt.Printf("deleting-asm %v", prms)
-	req := svc.DeleteSecretRequest(&prms)
-	if _, err := req.Send(context.Background()); err != nil {
-		if awserr, ok := err.(awserr.Error); ok {
-			switch awserr.Code() {
-			case secretsmanager.ErrCodeResourceNotFoundException:
-				break
-			default:
-				log.Warn().Msgf("Error when deleting %v", prms)
-				return err
-			}
+
+	if _, err := svc.DeleteSecret(context.Background(), &prms); err != nil {
+
+		var rsf *types.ResourceNotFoundException
+		if errors.As(err, rsf) {
+			return nil
 		}
+
+		log.Warn().Msgf("Error when deleting %v", prms)
+		return err
 	}
 	return nil
 }

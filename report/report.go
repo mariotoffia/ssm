@@ -3,7 +3,7 @@ package report
 import (
 	"encoding/json"
 
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/mariotoffia/ssm/internal/asm"
 	"github.com/mariotoffia/ssm/internal/common"
 	"github.com/mariotoffia/ssm/internal/pms"
@@ -54,7 +54,7 @@ type PmsParameterDetails struct {
 	// Pattern is a regexp to validate against (optional)
 	Pattern string `json:"pattern"`
 	// Tier specifies the tier for the parameter
-	Tier ssm.ParameterTier `json:"tier"`
+	Tier types.ParameterTier `json:"tier"`
 }
 
 // AsmParameterDetails specifies Secrets Manager secret specifics
@@ -66,16 +66,16 @@ type AsmParameterDetails struct {
 
 // Reporter is the type to produce report of the configuration
 type Reporter struct {
-	tier ssm.ParameterTier
+	tier types.ParameterTier
 }
 
 // New creates a new Reporter with ssm.ParameterTierStandard
 func New() *Reporter {
-	return NewWithTier(ssm.ParameterTierStandard)
+	return NewWithTier(types.ParameterTierStandard)
 }
 
 // NewWithTier creates a new Reporter with specified tier
-func NewWithTier(tier ssm.ParameterTier) *Reporter {
+func NewWithTier(tier types.ParameterTier) *Reporter {
 	return &Reporter{tier: tier}
 }
 

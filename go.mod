@@ -1,8 +1,10 @@
 module github.com/mariotoffia/ssm
 
 require (
-	github.com/aws/aws-sdk-go v1.35.16
-	github.com/aws/aws-sdk-go-v2 v0.22.0
+	github.com/aws/aws-sdk-go-v2 v0.31.0
+	github.com/aws/aws-sdk-go-v2/config v0.4.0
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v0.31.0
+	github.com/aws/aws-sdk-go-v2/service/ssm v0.31.0
 	github.com/google/uuid v1.1.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1
