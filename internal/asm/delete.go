@@ -122,7 +122,7 @@ func internalDelete(svc *secretsmanager.Client, prms secretsmanager.DeleteSecret
 
 		var resourceNotFound *smtypes.ResourceNotFoundException
 
-		if errors.As(err, resourceNotFound) {
+		if errors.As(err, &resourceNotFound) {
 			return nil
 		}
 

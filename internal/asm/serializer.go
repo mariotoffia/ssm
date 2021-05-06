@@ -63,7 +63,7 @@ func (p *Serializer) Get(node *parser.StructNode,
 
 					var resourceNotFound *types.ResourceNotFoundException
 
-					if errors.As(err, resourceNotFound) {
+					if errors.As(err, &resourceNotFound) {
 
 						im[n.FqName] = support.FullNameField{LocalName: n.FqName,
 							RemoteName: prm, Field: node.Field, Value: node.Value}

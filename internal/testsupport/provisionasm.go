@@ -137,7 +137,7 @@ func internalDelete(prms secretsmanager.DeleteSecretInput) error {
 	if _, err := svc.DeleteSecret(context.Background(), &prms); err != nil {
 
 		var rsf *types.ResourceNotFoundException
-		if errors.As(err, rsf) {
+		if errors.As(err, &rsf) {
 			return nil
 		}
 
