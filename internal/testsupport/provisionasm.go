@@ -106,7 +106,7 @@ func DeleteAllUnittestSecrets() error {
 			if strings.HasPrefix(*s.Name, "/unittest-") {
 
 				internalDelete(secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
-					ForceDeleteWithoutRecovery: true})
+					ForceDeleteWithoutRecovery: aws.Bool(true)})
 
 			}
 		}

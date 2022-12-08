@@ -30,7 +30,7 @@ func (p *Serializer) toPutParameters(parameters map[string]*parser.StructNode) [
 		if tag, ok := ToPmsTag(node); ok {
 
 			params = append(params, ssm.PutParameterInput{Name: aws.String(tag.FqName()),
-				Overwrite: tag.Overwrite(),
+				Overwrite: aws.Bool(tag.Overwrite()),
 				Tier:      tag.SsmTier(p.tier),
 				Tags:      tag.SsmTags(),
 				Type:      ParameterType(node),

@@ -48,7 +48,7 @@ func New(service string) (*Serializer, error) {
 		tier: types.ParameterTierStandard}, nil
 }
 
-// Get parameters from the parameterstore and populates the node graph with values.
+// Get parameters from the parameter store and populates the node graph with values.
 // Any fields that was not able to be set is reported in the FullNameField string map.
 // FullNameField do not include those fields filtered out in exclusion filter.
 func (p *Serializer) Get(node *parser.StructNode,
@@ -61,7 +61,7 @@ func (p *Serializer) Get(node *parser.StructNode,
 
 	params := &ssm.GetParametersInput{
 		Names:          paths,
-		WithDecryption: isSecure,
+		WithDecryption: aws.Bool(isSecure),
 	}
 
 	log.Debug().Str("svc", p.service).

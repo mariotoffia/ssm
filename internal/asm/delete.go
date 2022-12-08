@@ -32,7 +32,7 @@ func (p *Serializer) Delete(
 		err := internalDelete(
 			svc,
 			secretsmanager.DeleteSecretInput{SecretId: aws.String(path),
-				ForceDeleteWithoutRecovery: true},
+				ForceDeleteWithoutRecovery: aws.Bool(true)},
 		)
 
 		if err != nil {
@@ -83,7 +83,7 @@ func (p *Serializer) DeleteTree(prefixes ...string) error {
 				internalDelete(
 					svc,
 					secretsmanager.DeleteSecretInput{SecretId: aws.String(*s.Name),
-						ForceDeleteWithoutRecovery: true},
+						ForceDeleteWithoutRecovery: aws.Bool(true)},
 				)
 
 			}

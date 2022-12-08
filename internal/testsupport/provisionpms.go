@@ -120,18 +120,18 @@ func DefaultProvisionPms(stage string) error {
 	return provisionPms([]ssm.PutParameterInput{
 		{Name: aws.String(fmt.Sprintf("/%s/simple/test", stage)),
 			Type:      types.ParameterTypeString,
-			Overwrite: true,
+			Overwrite: aws.Bool(true),
 			Value:     aws.String("The name")},
 		{Name: aws.String(fmt.Sprintf("/%s/test-service/sub/ext", stage)),
 			Type:      types.ParameterTypeString,
-			Overwrite: true,
+			Overwrite: aws.Bool(true),
 			Value:     aws.String("43")},
 		{Name: aws.String(fmt.Sprintf("/%s/test-service/sub/myname", stage)),
 			Type:      types.ParameterTypeString,
-			Overwrite: true,
+			Overwrite: aws.Bool(true),
 			Value:     aws.String("test svc name")},
 		{Name: aws.String(fmt.Sprintf("/%s/test-service/bubbibobbo", stage)),
 			Type:      types.ParameterTypeString,
-			Overwrite: true,
+			Overwrite: aws.Bool(true),
 			Value:     aws.String(`{"user":"gurka","timeout":17}`)}})
 }
